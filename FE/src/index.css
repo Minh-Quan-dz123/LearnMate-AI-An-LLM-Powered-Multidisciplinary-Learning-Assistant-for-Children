@@ -1,0 +1,149 @@
+/* =========================================================
+   LearnMate AI - Child-friendly Design Tokens & Modern Theme
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap');
+
+:root {
+  --font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Bảng màu sinh động, tươi vui cho trẻ em */
+  --color-primary: #FF6B6B;       /* Đỏ hồng năng động */
+  --color-primary-hover: #FA5252;
+  --color-secondary: #4DABF7;     /* Xanh da trời thân thiện */
+  --color-secondary-hover: #339AF0;
+  --color-accent: #FCC419;        /* Vàng rực rỡ mặt trời */
+  --color-success: #51CF66;       /* Xanh lá đúng đáp án */
+  --color-purple: #845EF7;        /* Tím trí tuệ */
+  --color-bg-soft: #F8F9FA;       /* Nền dịu mắt */
+  --color-card-bg: #FFFFFF;
+  --color-text-main: #212529;
+  --color-text-muted: #868E96;
+  --color-border: #E9ECEF;
+
+  /* Hiệu ứng bo tròn & bóng mềm mại */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  --shadow-pop: 0 8px 0 rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: #EDF2F7;
+  background-image: radial-gradient(#CBD5E0 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  color: var(--color-text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nút bấm 3D vui tươi cho trẻ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 0 #E03131;
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #E03131;
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #E03131;
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+  box-shadow: 0 4px 0 #1C7ED6;
+}
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #1C7ED6;
+}
+
+.btn-outline {
+  background: white;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-main);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-bg-soft);
+  border-color: #CED4DA;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Thẻ card nổi */
+.card {
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+  border: 2px solid white;
+}
+
+/* Input thân thiện */
+.input-field {
+  width: 100%;
+  font-family: var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border);
+  background-color: #F8F9FA;
+  transition: all 0.2s;
+  outline: none;
+}
+.input-field:focus {
+  background-color: white;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 4px rgba(77, 171, 247, 0.2);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
