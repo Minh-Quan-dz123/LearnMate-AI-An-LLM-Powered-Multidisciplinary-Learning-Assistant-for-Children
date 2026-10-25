@@ -1,233 +1,253 @@
-# Module 2 — Backend
+# LearnMate AI — Backend
 
-**Người phụ trách:** Thành viên Backend Module 2
+## 1. Giới thiệu
 
-## 1. Phạm vi
+LearnMate AI là dự án thử nghiệm khả năng ứng dụng LLM trong việc sinh bài tập và đánh giá câu trả lời dành cho trẻ em.
 
-Module 2 phụ trách bài tập câu hỏi mở.
+Backend được xây dựng bằng Python và FastAPI, có nhiệm vụ cung cấp REST API cho Frontend, quản lý dữ liệu người dùng, xây dựng prompt và giao tiếp với LLM Server.
 
-Chức năng chính:
+Đây là project thử nghiệm, không phải hệ thống production. Do đó thiết kế được giữ đơn giản, ưu tiên tính dễ hiểu và khả năng tích hợp.
 
-- Sinh câu hỏi mở.
-- Nhận câu trả lời của trẻ.
-- Gọi LLM để đánh giá.
-- Trả về điểm số và nhận xét bằng tiếng Việt.
+## 2. Công nghệ
 
-Không cần lưu lịch sử bài làm trong Database.
+- Python
+- FastAPI
+- Pydantic
+- Supabase (PostgreSQL)
+- HTTPX (gọi LLM Server)
+- Uvicorn
 
-## 2. Các file và hàm dự kiến
+## 3. Các thành phần chính
 
-### app/routers/module2.py
+Backend gồm hai module nghiệp vụ:
 
-**generate_questions()**
+**Module 1 — Trắc nghiệm**
 
-- Nhận yêu cầu sinh bài từ FE.
-- Kiểm tra dữ liệu đầu vào.
-- Gọi EGM sinh câu hỏi.
-- Trả về JSON câu hỏi.
+- Sinh bài tập trắc nghiệm một đáp án.
+- Sinh bài tập trắc nghiệm nhiều đáp án.
+- Trả về câu hỏi, các lựa chọn, đáp án đúng và giải thích.
+- Frontend tự kiểm tra đáp án, Backend không chấm điểm.
 
-**evaluate_answer()**
+**Module 2 — Câu hỏi mở**
 
-- Nhận câu hỏi và câu trả lời của trẻ.
-- Gọi EGM đánh giá.
-- Trả kết quả về FE.
+- Sinh câu hỏi cần nhập câu trả lời.
+- Nhận câu trả lời từ Frontend.
+- Gửi câu hỏi và câu trả lời đến LLM để đánh giá.
+- Trả về điểm số và nhận xét cho Frontend.
 
-### app/schemas/module2.py
+Ngoài ra, Backend còn quản lý tài khoản và hồ sơ trẻ.
 
-Các Pydantic model đề xuất:
+## 4. Cấu trúc project
 
-**GenerateQuestionsRequest**
+learnmate_backend/
+├── .env
+├── .env.example
+├── .gitignore
+├── requirements.txt
+├── README.md
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── config.py
+│   ├── constants.py
+│   ├── llm_client.py
+│   ├── database.py
+│   │
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── children.py
+│   │   ├── module1.py
+│   │   └── module2.py
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── children.py
+│   │   ├── module1.py
+│   │   └── module2.py
+│   │
+│   └── egm/
+│       ├── __init__.py
+│       ├── module1_egm.py
+│       └── module2_egm.py
+│
+├── docs/
+│   ├── module1.md
+│   └── module2.md
+│
+└── scripts/
+    └── try_llm.py
 
-- user_id
-- subject
-- topic
-- level
-- question_count
+## 5. Chức năng từng file
 
-**EvaluateAnswerRequest**
+### 5.1. Các file chung trong app/
 
-- user_id
-- question
-- answer
-- subject
-- topic
-- level
+| File          | Chức năng                                                       |
+| ------------- | --------------------------------------------------------------- |
+| main.py       | Khởi tạo FastAPI và đăng ký các router                          |
+| config.py     | Đọc cấu hình từ .env                                            |
+| constants.py  | Lưu danh sách môn học, chủ đề, độ khó và các hằng số dùng chung |
+| database.py   | Khởi tạo kết nối Supabase                                       |
+| llm_client.py | Gửi HTTP request đến LLM Server và nhận response                |
+| __init__.py   | Đánh dấu thư mục là Python package                              |
 
-**EvaluationResult**
+### 5.2. Thư mục routers/
 
-- score
-- feedback
-- suggestion
+Chứa các API endpoint mà Frontend gọi đến.
 
-### app/egm/module2_egm.py
+| File        | Chức năng                                   |
+| ----------- | ------------------------------------------- |
+| auth.py     | Đăng ký và đăng nhập                        |
+| children.py | Tạo, xem, cập nhật, xóa hồ sơ trẻ           |
+| module1.py  | API sinh bài tập trắc nghiệm                |
+| module2.py  | API sinh câu hỏi mở và đánh giá câu trả lời |
 
-**build_generation_prompt()**
+Router chủ yếu nhận request, kiểm tra dữ liệu thông qua Pydantic và gọi hàm xử lý nghiệp vụ tương ứng.
+
+### 5.3. Thư mục schemas/
+
+Định nghĩa cấu trúc dữ liệu bằng Pydantic.
+
+| File        | Chức năng                                   |
+| ----------- | ------------------------------------------- |
+| auth.py     | Dữ liệu đăng ký, đăng nhập                  |
+| children.py | Dữ liệu tạo và cập nhật hồ sơ trẻ           |
+| module1.py  | Request/response của bài tập trắc nghiệm    |
+| module2.py  | Request/response của câu hỏi mở và đánh giá |
+
+### 5.4. Thư mục egm/
+
+EGM viết tắt của Exercise Generation Module.
+
+Đây là nơi xây dựng prompt và xử lý dữ liệu bài tập.
+
+**module1_egm.py**
+
+- Tạo prompt sinh trắc nghiệm.
+- Gọi LLM Server thông qua llm_client.
+- Chuẩn hóa dữ liệu bài tập.
+
+**module2_egm.py**
 
 - Tạo prompt sinh câu hỏi mở.
-
-**build_evaluation_prompt()**
-
 - Tạo prompt đánh giá câu trả lời.
-
-**generate_questions()**
-
-- Gọi LLM để sinh câu hỏi.
-
-**evaluate_answer()**
-
-- Gọi LLM để chấm câu trả lời.
-
-### app/llm_client.py
-
-**generate_text()**
-
-- Nhận prompt và các tham số tùy chọn.
-- Gửi HTTP request đến LLM Server.
-- Trả về kết quả model sinh ra.
-
-File này được cả hai module sử dụng.
-
-## 3. API dự kiến
-
-| Method | Endpoint              | Chức năng            |
-| ------ | --------------------- | -------------------- |
-| POST   | /api/module2/generate | Sinh câu hỏi mở      |
-| POST   | /api/module2/evaluate | Đánh giá câu trả lời |
-
-### Request sinh câu hỏi
-
-    {
-      "user_id": 1,
-      "subject": "Đạo đức",
-      "topic": "Giúp đỡ bạn bè",
-      "level": "Cơ bản",
-      "question_count": 2
-    }
-
-### Response sinh câu hỏi
-
-    {
-      "success": true,
-      "message": "Sinh câu hỏi thành công",
-      "data": {
-        "questions": [
-          {
-            "id": 1,
-            "question": "Khi thấy bạn bị ngã, em sẽ làm gì?"
-          },
-          {
-            "id": 2,
-            "question": "Em có thể giúp đỡ bạn bè bằng những việc gì?"
-          }
-        ]
-      }
-    }
-
-### Request đánh giá
-
-    {
-      "user_id": 1,
-      "subject": "Đạo đức",
-      "topic": "Giúp đỡ bạn bè",
-      "level": "Cơ bản",
-      "question": "Khi thấy bạn bị ngã, em sẽ làm gì?",
-      "answer": "Em sẽ đỡ bạn dậy và hỏi xem bạn có đau không."
-    }
-
-### Response đánh giá
-
-    {
-      "success": true,
-      "message": "Đánh giá câu trả lời thành công",
-      "data": {
-        "score": 10,
-        "feedback": "Em trả lời rất tốt! Em đã biết quan tâm và giúp đỡ bạn bè.",
-        "suggestion": "Em cũng có thể nhờ thầy cô giúp nếu bạn bị thương."
-      }
-    }
-
-## 4. Prompt sinh câu hỏi mẫu
-
-Bạn là giáo viên thân thiện với trẻ em.
-
-Hãy tạo câu hỏi mở bằng tiếng Việt theo thông tin:
-
-- Môn học: {subject}
-- Chủ đề: {topic}
-- Độ khó: {level}
-- Tuổi trẻ: {age}
-- Số câu hỏi: {question_count}
-
-Yêu cầu:
-
-1. Câu hỏi ngắn gọn, rõ ràng.
-2. Phù hợp với độ tuổi.
-3. Cho phép trẻ trả lời bằng từ, cụm từ hoặc câu ngắn.
-4. Ưu tiên câu hỏi có thể có nhiều câu trả lời hợp lý.
-5. Trả về JSON theo schema đã thống nhất.
-
-## 5. Prompt đánh giá mẫu
-
-Bạn là giáo viên thân thiện với trẻ em.
-
-Hãy đánh giá câu trả lời sau:
-
-Câu hỏi: {question}
-
-Câu trả lời của trẻ: {answer}
-
-Môn học: {subject}
-
-Chủ đề: {topic}
-
-Độ khó: {level}
-
-Yêu cầu:
-
-1. Đánh giá theo ý nghĩa, không so khớp cứng nhắc từng từ.
-2. Chấp nhận các cách diễn đạt khác nhau nếu hợp lý.
-3. Cho điểm từ 0 đến 10.
-4. Đưa ra nhận xét tích cực, nhẹ nhàng.
-5. Nếu câu trả lời chưa đầy đủ, đưa ra gợi ý giúp trẻ cải thiện.
-6. Không chê bai hoặc sử dụng lời lẽ tiêu cực.
-7. Trả về JSON với các trường score, feedback, suggestion.
+- Gọi LLM Server.
+- Chuẩn hóa kết quả đánh giá.
 
 ## 6. Luồng xử lý
 
-### Sinh câu hỏi
+### Module 1
 
-1. FE gửi yêu cầu.
-2. Router gọi EGM.
-3. EGM tạo prompt.
-4. Gọi LLM Server.
-5. Kiểm tra JSON trả về.
-6. Trả danh sách câu hỏi cho FE.
+Frontend → routers/module1.py → egm/module1_egm.py → llm_client.py → LLM Server
 
-### Đánh giá
+Khi LLM trả kết quả:
 
-1. FE gửi câu hỏi và câu trả lời.
-2. EGM tạo prompt đánh giá.
-3. Gọi LLM Server.
-4. Nhận điểm và phản hồi.
-5. Chuẩn hóa JSON.
-6. Trả kết quả cho FE.
+LLM Server → EGM → Router → Frontend
 
-## 7. Danh sách công việc
+Frontend tự chấm bài dựa trên đáp án Backend trả về.
 
-- Viết schemas/module2.py.
-- Viết routers/module2.py.
-- Viết prompt sinh câu hỏi.
-- Viết prompt đánh giá.
-- Hoàn thiện llm_client.py.
-- Kiểm tra output JSON.
-- Test API sinh câu hỏi.
-- Test API đánh giá.
-- Cập nhật tài liệu.
+### Module 2
 
-## 8. Ghi chú
+**Sinh câu hỏi:**
 
-- Không cần lưu câu trả lời vào Database.
-- Không cần JWT.
-- LLM là thành phần thực hiện đánh giá.
-- Backend cần xử lý trường hợp model không trả về JSON hợp lệ.
-- Tên key JSON bằng tiếng Anh, nội dung câu hỏi và nhận xét bằng tiếng Việt.
+Frontend → routers/module2.py → egm/module2_egm.py → llm_client.py → LLM Server
+
+**Chấm câu trả lời:**
+
+Frontend gửi câu hỏi và câu trả lời → Backend xây dựng prompt đánh giá → LLM Server → Backend → Frontend.
+
+## 7. Quy ước dữ liệu
+
+- Tên key trong JSON sử dụng tiếng Anh.
+- Các giá trị nội dung nghiệp vụ sử dụng tiếng Việt.
+- Các giá trị kỹ thuật như ID, URL, mã lựa chọn và tên model có thể sử dụng định dạng phù hợp.
+- Sử dụng `user_id` để xác định người dùng trong các request cần thiết.
+- Không triển khai JWT hoặc phân quyền trong phiên bản thử nghiệm.
+- Module 1 không cần lưu bài tập hay đáp án vào Database.
+- Module 2 không bắt buộc lưu lịch sử đánh giá.
+- Module 3 (bài tập vẽ) chưa triển khai.
+
+## 8. Quy ước response
+
+Đề xuất cấu trúc chung:
+
+{
+  "success": true,
+  "message": "Thao tác thành công",
+  "data": {}
+}
+
+Khi có lỗi:
+
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ"
+}
+
+Đây là cấu trúc gợi ý. Các thành viên cần thống nhất trước khi tích hợp.
+
+## 9. Phân công
+
+### Quân
+
+- main.py
+- config.py
+- database.py
+- routers/auth.py
+- routers/children.py
+- routers/module1.py
+- schemas/auth.py
+- schemas/children.py
+- schemas/module1.py
+- egm/module1_egm.py
+- docs/module1.md
+
+### Thành viên phụ trách Module 2
+
+- routers/module2.py
+- schemas/module2.py
+- egm/module2_egm.py
+- docs/module2.md
+- llm_client.py (theo phân công đã thống nhất)
+
+Các file chung như constants.py, README.md, requirements.txt cần được thống nhất khi sửa đổi.
+
+## 10. Hướng dẫn chạy
+
+### Tạo môi trường
+
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+### Cài thư viện
+
+pip install -r requirements.txt
+
+### Cấu hình
+
+Sao chép .env.example thành .env và điền thông tin kết nối.
+
+### Khởi động
+
+python -m uvicorn app.main:app --reload
+
+Truy cập:
+
+- http://127.0.0.1:8000/docs
+- http://127.0.0.1:8000/health
+
+## 11. Quy ước phối hợp
+
+1. Mỗi thành viên phụ trách phần code được phân công.
+2. Trước khi thay đổi file chung, cần thông báo cho người còn lại.
+3. Khi thêm hoặc sửa API, cần thống nhất request và response với Frontend.
+4. Khi thay đổi hàm quan trọng hoặc luồng nghiệp vụ, cập nhật file docs tương ứng.
+5. Không push file .env hoặc môi trường .venv.
+6. Không tự ý thay đổi cấu trúc JSON chung khi chưa trao đổi.
+7. Ưu tiên code đơn giản, dễ đọc và dễ kiểm thử.
+
+## 12. Ghi chú
+
+Các mô tả trong tài liệu chỉ mang tính định hướng triển khai. Lập trình viên có thể điều chỉnh thiết kế nội bộ nếu thấy hợp lý, miễn là các thành phần giao tiếp được với nhau theo hợp đồng đã thống nhất.
