@@ -84,3 +84,56 @@
 # Lưu ý:
 # - Chỉ dùng tài khoản và dữ liệu giả cho prototype.
 # - Không triển khai hệ thống xác thực production tại đây.
+
+# 1. IMPORT THƯ VIỆN
+from fastapi import Request
+from supabase import acreate_client, AsyncClient
+from app.config import get_settings
+
+# 2. KHỞI TẠO SUPABASE CLIENT
+async def create_supabase_client() -> AsyncClient:
+
+    """
+    Khởi tạo Supabase Async Client.
+    Input: Không có.
+    Output: AsyncClient.
+
+    Chức năng:
+        - Đọc cấu hình từ config.py.
+        - Khởi tạo client bất đồng bộ.
+        - Trả client cho FastAPI lifespan.
+    """
+
+    # Bước 1: Lấy cấu hình.
+    settings = get_settings()
+
+    # Bước 2: Khởi tạo Supabase Async Client.
+    client: AsyncClient = await acreate_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_KEY
+    )
+
+    # Bước 3: Trả client.
+    return client
+
+# 3. DEPENDENCY CUNG CẤP DATABASE CLIENT
+# Lấy Supabase Client đã được khởi tạo để cung cấp cho các 
+# Router thông qua Dependency Injection (DI).
+async def get_supabase(request: Request) -> AsyncClient:
+
+    """
+    Cung cấp Supabase Client cho Router.
+    Input:
+        request: Request
+            HTTP request hiện tại.
+
+    Output:
+        AsyncClient.
+
+    Chức năng:
+        - Lấy client đã lưu trong app.state.
+        - Không tạo lại client cho mỗi request.
+    """
+
+    return request.app.state.supabase
+

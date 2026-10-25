@@ -1,6 +1,6 @@
 # ============================================================
 # FILE: app/main.py
-# PHỤ TRÁCH: ________
+# PHỤ TRÁCH: Quân
 #
 # MỤC ĐÍCH:
 # Khởi tạo ứng dụng FastAPI và đăng ký toàn bộ API Router.
@@ -95,6 +95,104 @@
 # 7. KHỞI ĐỘNG
 #
 # Chạy tại thư mục gốc:
+# python -m uvicorn app.main:app --reload
+#
+# Swagger:
+# http://127.0.0.1:8000/docs
+#
+# Health:
+# http://127.0.0.1:8000/health
+
+
+# 1. IMPORT THƯ VIỆN
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.database import create_supabase_client
+from app.routers import auth
+
+# 2. QUẢN LÝ VÒNG ĐỜI ỨNG DỤNG
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # Bước 1: Khởi tạo Supabase Async Client.
+    # Thực hiện một lần khi ứng dụng khởi động.
+    supabase = await create_supabase_client()
+
+    # Bước 2: Lưu client vào application state.
+    # Các Router có thể truy cập thông qua Depends().
+    app.state.supabase = supabase
+
+    try:
+        # Ứng dụng bắt đầu phục vụ HTTP request.
+        yield
+
+    finally:
+        # Bước 3: Giải phóng kết nối PostgREST
+        # khi ứng dụng dừng.
+        await supabase.postgrest.aclose()
+
+# 3. KHỞI TẠO FASTAPI
+app = FastAPI(
+    title="LearnMate AI Backend",
+    description="Backend API cho hệ thống LearnMate AI",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# 4. CẤU HÌNH CORS
+# Các địa chỉ Frontend được phép gọi Backend.
+# Sử dụng trong môi trường local/demo.
+
+app.add_middleware(
+    CORSMiddleware,
+
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+
+    allow_credentials=False,
+
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+    ],
+
+)
+
+# 5. ĐĂNG KÝ ROUTER
+# Module quản lý tài khoản.
+app.include_router(auth.router)
+
+# Các Router sau sẽ đăng ký khi đã triển khai:
+#
+# from app.routers import children, module1, module2
+#
+# app.include_router(children.router)
+# app.include_router(module1.router)
+# app.include_router(module2.router)
+
+
+# 6. API KIỂM TRA TRẠNG THÁI
+@app.get("/health")
+async def health_check():
+
+    return {
+        "success": True,
+        "message": "Backend đang hoạt động"
+    }
+
+# 7. KHỞI ĐỘNG
+# Chạy tại thư mục gốc:
+#
 # python -m uvicorn app.main:app --reload
 #
 # Swagger:
