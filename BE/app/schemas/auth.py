@@ -28,7 +28,6 @@
 # - password: str
 # - confirm_password: str
 #
-# TODO:
 # - Kiểm tra username không rỗng.
 # - Kiểm tra password không rỗng.
 # - Kiểm tra confirm_password trùng password.
@@ -45,7 +44,6 @@
 # - username: str
 # - password: str
 #
-# TODO:
 # - Kiểm tra các trường bắt buộc.
 # - Không thực hiện truy vấn Database ở đây.
 
@@ -80,11 +78,12 @@
 
 # 6. KIỂM TRA
 #
-# TODO:
 # - Thử tạo RegisterRequest hợp lệ.
 # - Thử username rỗng.
 # - Thử password rỗng.
 # - Thử confirm_password không trùng.
+
+
 # 1. IMPORT THƯ VIỆN
 from pydantic import BaseModel, Field, field_validator, model_validator
 

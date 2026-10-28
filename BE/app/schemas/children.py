@@ -101,3 +101,67 @@
 # - Tuổi không hợp lệ.
 # - Danh sách sở thích rỗng.
 # - Giới tính không được cung cấp.
+
+
+from pydantic import BaseModel, Field, field_validator
+
+# 1. CÁC TRƯỜNG DỮ LIỆU CHUNG
+class ChildBase(BaseModel):
+
+    name: str = Field(min_length=1, max_length=120)
+    age: int = Field(ge=2, le=15)
+    gender: str|None = Field(default=None, max_length=60)
+    interests: list[str] = Field(default_factory=list)
+
+    # kiểm tra tên ko để trống
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Tên trẻ không được để trống")
+
+        return value
+
+
+# 2. REQUEST TẠO HỒ SƠ
+class CreateChildRequest(ChildBase):
+
+    # thêm id của user
+    user_id: int = Field(gt=0)
+
+# 3. REQUEST CẬP NHẬT HỒ SƠ
+class UpdateChildRequest(CreateChildRequest):
+
+    # giống class số 2
+    pass
+# pass là câu lệnh không thực hiện bất kỳ hành động nào. 
+# Nó được dùng khi cú pháp yêu cầu phải có một câu lệnh, 
+# nhưng bạn không muốn viết thêm gì.
+
+# =============== RESPONSE ===================
+
+# 4. DỮ LIỆU HỒ SƠ TRẢ VỀ FRONTEND
+class ChildData(ChildBase):
+    child_id: int
+
+# 5. RESPONSE MỘT HỒ SƠ
+class ChildResponse(BaseModel):
+    success: bool
+    message: str
+    data: ChildData
+
+
+# 6. RESPONSE DANH SÁCH HỒ SƠ
+class ChildrenListResponse(BaseModel):
+    success: bool
+    message: str
+    data: list[ChildData]
+
+# 7. RESPONSE XÓA HỒ SƠ
+class DeleteChildResponse(BaseModel):
+    success: bool
+    message: str
+    data: None = None
+
