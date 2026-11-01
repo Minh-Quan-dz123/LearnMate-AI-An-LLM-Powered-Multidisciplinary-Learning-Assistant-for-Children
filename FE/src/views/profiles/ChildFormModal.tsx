@@ -61,12 +61,18 @@ export const ChildFormModal: React.FC<ChildFormModalProps> = ({
         gender,
         interests,
       });
-      onClose();
-    } catch {
-      setError('Không thể lưu hồ sơ. Vui lòng thử lại!');
-    } finally {
-      setLoading(false);
-    }
+        onClose();
+      } 
+      catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Không thể lưu hồ sơ. Vui lòng thử lại!'
+        );
+      } 
+      finally {
+        setLoading(false);
+      }
   };
 
   return (

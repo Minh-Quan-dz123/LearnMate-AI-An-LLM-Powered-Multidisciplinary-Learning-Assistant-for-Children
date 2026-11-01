@@ -1,6 +1,6 @@
 export interface ChildProfile {
   child_id: number;
-  user_id: number;
+  user_id?: number;
   name: string;
   age: number;
   gender?: 'Nam' | 'Nữ' | 'Không muốn cung cấp' | string;

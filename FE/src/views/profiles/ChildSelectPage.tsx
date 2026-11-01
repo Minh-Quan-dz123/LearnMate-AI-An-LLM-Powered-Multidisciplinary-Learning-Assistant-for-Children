@@ -21,12 +21,22 @@ export const ChildSelectPage: React.FC<ChildSelectPageProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [editingChild, setEditingChild] = useState<ChildProfile | null>(null);
 
+  // Thêm state quản lý lỗi
+  const [pageError, setPageError] = useState<string | null>(null);
+
+
   const fetchChildren = async () => {
     setLoading(true);
+    setPageError(null);
+
     const res = await childService.getChildren(user.user_id);
+
     if (res.success && res.data) {
       setChildren(res.data);
+    } else {
+      setPageError(res.message || 'Không lấy được danh sách hồ sơ.');
     }
+
     setLoading(false);
   };
 
@@ -35,23 +45,40 @@ export const ChildSelectPage: React.FC<ChildSelectPageProps> = ({
   }, [user.user_id]);
 
   const handleSaveChild = async (payload: CreateChildPayload) => {
-    if (editingChild) {
-      await childService.updateChild({
-        ...payload,
-        child_id: editingChild.child_id,
-      });
-    } else {
-      await childService.createChild(payload);
+    const res = editingChild
+      ? await childService.updateChild({
+          ...payload,
+          child_id: editingChild.child_id,
+        })
+      : await childService.createChild(payload);
+
+    // apiClient không tự throw khi BE trả HTTP 4xx/5xx
+    if (!res.success) {
+      throw new Error(res.message || 'Không lưu được hồ sơ.');
     }
-    fetchChildren();
+
+    await fetchChildren();
   };
 
-  const handleDeleteChild = async (childId: number, e: React.MouseEvent) => {
+
+  const handleDeleteChild = async (
+    childId: number,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
-    if (window.confirm('Con hoặc bố mẹ có chắc muốn xóa hồ sơ này không?')) {
-      await childService.deleteChild(childId, user.user_id);
-      fetchChildren();
+
+    if (!window.confirm('Con hoặc bố mẹ có chắc muốn xóa hồ sơ này không?')) {
+      return;
     }
+
+    const res = await childService.deleteChild(childId, user.user_id);
+
+    if (!res.success) {
+      setPageError(res.message || 'Không thể xóa hồ sơ.');
+      return;
+    }
+
+    await fetchChildren();
   };
 
   const openCreateModal = () => {
@@ -106,6 +133,21 @@ export const ChildSelectPage: React.FC<ChildSelectPageProps> = ({
           <span>Đăng xuất</span>
         </button>
       </div>
+
+      {pageError && (
+        <div
+          role="alert"
+          style={{
+            color: '#C92A2A',
+            background: '#FFF5F5',
+            padding: 12,
+            borderRadius: 12,
+            marginBottom: 16,
+          }}
+        >
+          {pageError}
+        </div>
+      )}
 
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: '36px' }}>

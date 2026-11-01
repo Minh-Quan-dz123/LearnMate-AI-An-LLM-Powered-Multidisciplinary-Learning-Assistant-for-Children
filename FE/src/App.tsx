@@ -4,7 +4,8 @@ import type { User } from './types/auth';
 import type { ChildProfile } from './types/child';
 import { AuthPage } from './views/auth/AuthPage';
 import { ChildSelectPage } from './views/profiles/ChildSelectPage';
-import { Sparkles, BookOpen, RotateCcw } from 'lucide-react';
+import { Sparkles, RotateCcw } from 'lucide-react';
+import { ExercisePage } from './views/exercise/ExercisePage';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
@@ -121,29 +122,12 @@ export function App() {
       </header>
 
       {/* Main Content Area: Chuẩn bị nối tiếp sang Luồng 2 (Làm bài tập) */}
-      <main style={{ flex: 1, padding: '32px 20px', maxWidth: '860px', margin: '0 auto', width: '100%' }}>
-        <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '72px',
-            height: '72px',
-            borderRadius: '24px',
-            backgroundColor: '#E7F5FF',
-            color: 'var(--color-secondary)',
-            marginBottom: '16px'
-          }}>
-            <BookOpen size={40} />
-          </div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '8px' }}>
-            Chào mừng {activeChild.name} đến với bài học! 🎉
-          </h2>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '1.05rem', fontWeight: 600, maxWidth: '540px', margin: '0 auto 24px' }}>
-            Luồng 1 (Đăng ký, Đăng nhập và Quản lý hồ sơ trẻ) đã hoàn thành xuất sắc! Tiếp theo sẽ là màn hình Cấu hình môn học và Trình làm bài tập AI.
-          </p>
-        </div>
-      </main>
+      {/* Màn hình cấu hình, làm và chấm bài */}
+      <ExercisePage
+        key={activeChild.child_id}
+        child={activeChild}
+        onGoHome={handleChangeChild}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 export const CONFIG = {
+  // Vite proxy /api sang FastAPI localhost:8000
   API_BASE_URL: '/api',
-  // Khi bật USE_MOCK = true, FE sẽ dùng dữ liệu giả định sẵn để test toàn bộ luồng
-  // Khi Backend khởi chạy xong, chỉ cần đổi thành false để gọi API thật
-  USE_MOCK: true,
+
+  // false: gọi Backend thật
+  // true: dùng mock nội bộ của FE (chỉ cho auth/children)
+  USE_MOCK: false,
 };

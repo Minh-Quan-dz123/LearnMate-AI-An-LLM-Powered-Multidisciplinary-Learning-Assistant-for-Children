@@ -32,9 +32,12 @@ export function gradeQuiz(
     const selected = answers[q.question_id] || [];
     const correct = q.correct_option_ids || [];
 
+    const selectedSet = new Set(selected);
+    const correctSet = new Set(correct);
+
     const isMatch =
-      selected.length === correct.length &&
-      selected.every((opt) => correct.includes(opt));
+      selectedSet.size === correctSet.size &&
+      [...selectedSet].every((id) => correctSet.has(id));
 
     if (isMatch) {
       correctCount++;
