@@ -8,6 +8,11 @@
 # Cách dùng (LLM Server phải đang chạy):
 #   .venv/bin/python scripts/try_llm.py
 #
+# Địa chỉ server đọc từ biến môi trường LLM_SERVER_URL
+# (mặc định http://localhost:8001). Không hardcode tham số gọi model:
+# payload chỉ gửi prompt, để server dùng DEFAULT_TEMPERATURE /
+# DEFAULT_MAX_OUTPUT_TOKENS cấu hình trong .env ở thư mục gốc.
+#
 # Script sẽ gọi lần lượt:
 #   1. GET  /health
 #   2. GET  /internal/llm/models
@@ -16,11 +21,12 @@
 # ============================================================
 
 import json
+import os
 import sys
 
 import httpx
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = os.getenv("LLM_SERVER_URL", "http://localhost:8001").rstrip("/")
 
 
 def main() -> int:
@@ -43,7 +49,8 @@ def main() -> int:
     for m in r.json()["data"]["models"]:
         print(f"    {m['logical_name']:12s} -> {m['real_model_id']}")
 
-    # 3. Generate thật
+    # 3. Generate thật - không gửi temperature/max_output_tokens:
+    #    server tự dùng giá trị mặc định đọc từ .env (DEFAULT_*).
     payload = {
         "task": "Kiểm tra nhanh",
         "model": "generation",
@@ -54,8 +61,6 @@ def main() -> int:
             '"options": [{"option_id": "A", "text": "..."}], '
             '"correct_option_ids": ["A"], "explanation": "..."}]}'
         ),
-        "temperature": 0.5,
-        "max_output_tokens": 600,
     }
     try:
         r = httpx.post(f"{BASE_URL}/internal/llm/generate", json=payload, timeout=90)
