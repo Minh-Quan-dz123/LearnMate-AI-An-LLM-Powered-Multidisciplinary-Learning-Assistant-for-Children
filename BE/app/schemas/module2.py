@@ -19,6 +19,19 @@
 # - pydantic.model_validator nếu cần.
 # - app.constants
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.constants import (
+    MAX_QUESTION_COUNT, MIN_QUESTION_COUNT, QUESTION_TYPES, SUBJECTS, SUPPORTED_LEVELS,
+)
+
+OPEN_QUESTION_TYPE = "Câu trả lời mở"
+assert OPEN_QUESTION_TYPE in QUESTION_TYPES 
+#lớp cha: tự cắt khoảng trắng đầu/cối ở mọi chuỗi
+#Nhờ thế mà câu trả lười "    "(toàn dấu cách) bị coi là rỗng và bị chặn
+
+class _Base(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
 
 # 2. CLASS OpenGenerateRequest
 #
@@ -37,6 +50,39 @@
 # - Chỉ chấp nhận question_type = "Câu trả lời mở".
 # - Kiểm tra question_count từ 1 đến 5.
 
+class OpenGenerateRequest(_Base):
+    child_id: int = Field(... , gt = 0) #id hồ sơ của trẻ phải > 0
+    subject: str = Field(... , min_length=1, max_length=100)
+    topic: str = Field(... , min_length=1 , max_length=100) #topic hardcore hoặc user tự nhập
+    level: str 
+    question_type: str 
+    question_count: int = Field(..., ge =MIN_QUESTION_COUNT , le =MAX_QUESTION_COUNT) 
+
+    @field_validator("subject")
+    @classmethod
+    def check_subject(cls, v:str)-> str :
+        if v not in SUBJECTS:
+            raise ValueError(f"Môn học không hợp lệ. Chỉ nhận: {', '.join(SUBJECTS)} ")
+        return v 
+
+    @field_validator("level")
+    @classmethod
+    def check_level(cls, v:str)-> str :
+        if v not in SUPPORTED_LEVELS:
+            raise ValueError(f"Level không hợp lệ. Chỉ nhận: {', '.join(SUPPORTED_LEVELS)} ")
+        return v 
+
+    @field_validator("question_type")
+    @classmethod
+    def check_question_type(cls, v:str)-> str :
+        if v != OPEN_QUESTION_TYPE:
+            raise ValueError(f'Module 2 chỉ nhận question_type = "{OPEN_QUESTION_TYPE}"')
+        return v
+
+    # @field_validator("question_count")
+    # @classmethod
+    # def check_question_count(cls, v:int) -> int:
+    #     if v != OPE
 
 # 3. CLASS OpenQuestion
 #
@@ -65,6 +111,20 @@
 # - Kiểm tra dữ liệu dạng string/list đúng schema.
 
 
+class OpenQuestion(_Base):
+    question_id : str = Field(..., min_length=1) #id câu hỏi 
+    content: str = Field(..., min_length=1) #nội dung câu hoi, không được rỗng
+    answer_hint: str = "" #gợi ý cách trả ời, cho phép rỗng
+    evaluation_criteria: list[str] = Field(..., min_length=1) #tiêu chí chấm bài, ít nhất 1 tiêu chí
+
+    @field_validator("evaluation_criteria")
+    @classmethod
+    def check_criteria(cls, v: list[str]) -> list[str]:
+        cleaned = [c.strip() for c in v if c and c.strip()] # bỏ tiêu chí rỗng
+        if not cleaned:
+            raise ValueError("evaluation_criteria phải có ít nhất 1 tiêu chí không rỗng")
+        return cleaned
+
 # 4. CLASS OpenExerciseData
 #
 # Các trường:
@@ -72,6 +132,10 @@
 # - question_type: str
 # - questions: list[OpenQuestion]
 
+class OpenExerciseData(_Base):
+    exercise_id:str = Field(..., min_length=1) 
+    question_type: str 
+    questions: list[OpenQuestion] = Field(..., min_length=1)
 
 # 5. CLASS OpenGenerateResponse
 #
@@ -80,6 +144,11 @@
 # - message: str
 # - data: OpenExerciseData
 
+class OpenGenerateResponse(_Base):
+    success: bool = True
+    message: str = "Sinh câu hỏi thành công"
+    data: OpenExerciseData 
+    
 
 # 6. CLASS OpenEvaluateRequest
 #
@@ -105,6 +174,31 @@
 # FE gửi lại câu hỏi và tiêu chí để chấm.
 # Backend không bắt buộc lưu câu hỏi vào Database.
 
+class OpenEvaluateRequest(_Base):
+    child_id : int = Field(..., gt=0) 
+    question_id: str = Field(..., min_length = 1)
+    question: str = Field(..., min_length=1, max_length=500)
+    answer: str = Field(..., min_length=1 , max_length=1000) 
+    evaluation_criteria: list[str] = Field(..., min_length=1)
+    subject: str = Field(..., min_length=1 , max_length=100)
+    topic: str = Field(..., min_length=1 , max_length=100)
+    level: str 
+
+    @field_validator("level")
+    @classmethod
+    def check_level(cls,v :str) -> str:
+        if v not in SUPPORTED_LEVELS:
+            raise ValueError(f"Level không hợp lệ, Chỉ nhận: {', '.join(SUPPORTED_LEVELS)}")
+        return v
+
+    @field_validator("evaluation_criteria")
+    @classmethod
+    def check_criteria(cls,v :list[str]) -> list[str]:
+        cleaned = [c.strip() for c in v if c and c.strip()]
+        if not cleaned:
+            raise ValueError("evaluation_criteria phải có ít nhất 1 tiêu chí không rỗng")
+        return cleaned
+
 
 # 7. CLASS OpenEvaluationData
 #
@@ -123,6 +217,15 @@
 # - Kiểm tra các trường nhận xét đúng kiểu.
 # - Giữ toàn bộ nội dung phản hồi bằng tiếng Việt.
 
+class OpenEvaluationData(_Base):
+    question_id: str 
+    score:float = Field(..., ge=0, le=10) # điểm phải nằm trong [0 ,10]
+    is_appropriate: bool # câu trả lời có phù hợp không
+    feedback: str = Field(...,min_length=1) # nhận xét tiếng Việt, bắt buộc
+    strenghts : list[str] = [] # điểm tốt, cho phép rỗng
+    suggestions: list[str]  # gợi ý cải thiện, bắt buộc có trường này
+    sample_answer: str=""  # câu trả lời mẫu, cho phép rỗng
+
 
 # 8. CLASS OpenEvaluateResponse
 #
@@ -131,7 +234,10 @@
 # - message: str
 # - data: OpenEvaluationData
 
-
+class OpenEvaluateResponse(_Base):
+    success: bool = True 
+    message: str = "Đánh giá câu trả lời thành công"
+    data: OpenEvaluationData
 # 9. KIỂM TRA
 #
 # TODO:
@@ -141,3 +247,5 @@
 # - Điểm số nhỏ hơn 0 hoặc lớn hơn 10.
 # - Model trả score dưới dạng chuỗi không hợp lệ.
 # - Model trả thiếu feedback hoặc suggestions.
+
+
