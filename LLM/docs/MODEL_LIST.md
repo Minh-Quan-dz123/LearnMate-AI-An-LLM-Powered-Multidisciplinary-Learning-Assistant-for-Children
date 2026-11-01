@@ -3,7 +3,7 @@
 > LLM Server dùng **OpenRouter** (`https://openrouter.ai/api/v1`) làm nhà cung cấp mặc định.
 > Model được chọn theo cấu hình `.env`; BE chỉ gửi **nhãn logic**, không biết ID model thật.
 
-## 1. Model đang cấu hình (mặc định)
+## 1. Model đang cấu hình (giá trị mẫu trong `.env.example` ở thư mục gốc)
 
 | Nhãn logic (BE gửi) | ID model thật (OpenRouter) | Loại | Vision | Ghi chú |
 |---|---|---|---|---|
@@ -49,7 +49,7 @@
 ## 4. Thay đổi model trong runtime
 
 ```bash
-# 1. Sửa .env
+# 1. Sửa .env (THƯ MỤC GỐC dự án, bên ngoài folder LLM)
 MODEL_GENERATION=google/gemini-2.5-flash
 
 # 2. Khởi động lại LLM Server (đọc lại .env)
@@ -59,6 +59,6 @@ curl http://localhost:8001/internal/llm/models
 
 ## 5. Lưu ý vận hành
 
-- **API key chỉ nằm trong `.env` của LLM Server**; FE không bao giờ thấy key.
+- **API key và tên model chỉ nằm trong `.env` ở thư mục gốc dự án** (LLM Server phụ trách); FE không bao giờ thấy key. Code không hardcode tên model — thiếu `MODEL_*` trong `.env` thì server không khởi động.
 - Model khả dụng trên OpenRouter thay đổi theo thời gian; danh sách đầy đủ: <https://openrouter.ai/models>.
 - Khi chọn model mới, **cả nhóm cần chạy lại test sinh câu hỏi** để kiểm tra chất lượng JSON và tiếng Việt trước khi chốt trong hợp đồng.

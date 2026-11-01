@@ -54,11 +54,16 @@ LLM/
 ├── docs/
 │   ├── API_CONTRACT.md         # Hợp đồng API BE ↔ LLM Server
 │   └── MODEL_LIST.md           # Danh sách model + tiêu chí chọn
-├── .env.example                # Mẫu cấu hình (KHÔNG commit .env thật)
-├── .gitignore
 ├── requirements.txt
 └── README.md                   # Tài liệu này
+
+(thư mục GỐC dự án — bên ngoài folder LLM)
+├── .env.example                # Mẫu cấu hình (commit được, KHÔNG có key thật)
+├── .env                        # Cấu hình thật (đã .gitignore, KHÔNG commit)
+└── .gitignore                  # Bỏ qua .env, .venv, __pycache__...
 ```
+
+> **Vị trí file cấu hình:** `.env.example` và `.env` nằm ở **thư mục gốc dự án**, không nằm trong folder `LLM`. `app/config.py` luôn đọc `.env` theo đường dẫn thư mục gốc (dựa trên vị trí file, không phụ thuộc thư mục khởi động).
 
 ## 4. Luồng xử lý
 
@@ -110,20 +115,23 @@ curl -X POST http://localhost:8001/internal/llm/generate \
 
 ## 6. Cấu hình `.env.example` và `requirements.txt`
 
-Xem toàn bộ chú thích trong [`.env.example`](.env.example). Các biến quan trọng nhất:
+Xem toàn bộ chú thích trong [`.env.example`](../.env.example) (nằm ở **thư mục gốc dự án**). Các biến quan trọng nhất:
 
-| Biến | Mặc định | Giải thích |
+| Biến | Giá trị mẫu trong `.env.example` | Giải thích |
 |---|---|---|
 | `OPENROUTER_API_KEY` | *(bắt buộc khi dùng OpenRouter)* | Key lấy tại <https://openrouter.ai/keys> |
 | `PROVIDER` | `openrouter` | `openrouter` \| `openai_compat` \| `mock` |
-| `MODEL_GENERATION` | `openai/gpt-4o-mini` | Model sinh câu hỏi |
-| `MODEL_EVALUATION` | `openai/gpt-4o-mini` | Model chấm câu trả lời mở |
-| `MODEL_VISION` | `openai/gpt-4o-mini` | Model vision (Module 3) |
+| `MODEL_GENERATION` | `openai/gpt-4o-mini` | **Bắt buộc** — model sinh câu hỏi (không còn hardcode trong code) |
+| `MODEL_EVALUATION` | `openai/gpt-4o-mini` | **Bắt buộc** — model chấm câu trả lời mở |
+| `MODEL_VISION` | `openai/gpt-4o-mini` | **Bắt buộc** — model vision (Module 3) |
+| `MODEL_DEFAULT` | `openai/gpt-4o-mini` | **Bắt buộc** — model dùng khi nhãn logic không xác định được |
 | `REQUEST_TIMEOUT_SECONDS` | `60` | Timeout một lần gọi model |
 | `MAX_RETRIES` | `2` | Số lần retry khi timeout/429/5xx |
 | `RATE_LIMIT_REQUESTS_PER_MINUTE` | `30` | Giới hạn request mỗi phút |
 | `INTERNAL_API_KEY` | *(trống)* | Bật auth nội bộ giữa BE ↔ LLM Server |
 | `MOCK_MODE` | `false` | `true` = trả dữ liệu mẫu, không gọi model thật |
+
+> Toàn bộ tên model **chỉ tồn tại trong `.env` / `.env.example`**. Mã nguồn `app/config.py` khai báo các trường `MODEL_*` **bắt buộc, không có giá trị mặc định**; thiếu biến nào server báo lỗi khởi động nêu đúng biến đó.
 
 ## 7. Cách cài đặt, chạy và test
 
@@ -138,10 +146,15 @@ pip install -r requirements.txt
 
 ### 7.2. Cấu hình
 
+`.env.example` và `.env` nằm ở **thư mục gốc dự án** (nơi chứa `README.md`, các folder `LLM/`, `BE/`, `FE/`):
+
 ```bash
+# Chạy ở thư mục gốc dự án (KHÔNG phải trong folder LLM)
 cp .env.example .env
-# Mở .env, điền OPENROUTER_API_KEY thật
+# Mở .env (thư mục gốc), điền OPENROUTER_API_KEY thật và chốt MODEL_* với cả nhóm
 ```
+
+> LLM Server tự đọc `.env` theo đường dẫn thư mục gốc dự án, vì vậy vẫn đúng khi chạy `uvicorn` từ folder `LLM` hay từ thư mục gốc.
 
 ### 7.3. Chạy server
 
@@ -206,3 +219,5 @@ LLM_EVALUATION_MODEL=evaluation
 4. **Thêm provider `openai_compat` và chế độ `mock`**: giúp cả nhóm demo offline và không phụ thuộc 100% vào OpenRouter.
 5. **Rate limit in-memory** (không Redis): đủ cho prototype chạy local/mạng nội bộ theo phạm vi README.
 6. **Auth nội bộ tùy chọn** (`X-Internal-Api-Key`): README yêu cầu "cần hạn chế truy cập nội bộ hoặc secret giữa các dịch vụ" — bật/tắt được bằng `.env`, mặc định tắt cho demo nội bộ.
+7. **Vị trí file cấu hình**: `.env.example` và `.env` đặt ở **thư mục gốc dự án** thay vì trong folder `LLM`; `app/config.py` neo đường dẫn `.env` theo thư mục gốc nên không phụ thuộc nơi khởi động.
+8. **Không hardcode tên model**: các trường `MODEL_GENERATION/EVALUATION/VISION/DEFAULT` trong `config.py` là **bắt buộc, không có giá trị mặc định trong code**; tên model chỉ tồn tại trong `.env`. Thiếu biến → server báo lỗi khởi động chỉ rõ biến nào.
