@@ -30,8 +30,12 @@ class GenerateRequest(BaseModel):
         max_length=200,
     )
     prompt: str = Field(..., description="Nội dung prompt do EGM phía BE xây dựng.")
+    # Giới hạn temperature 0-2 là hằng số giao thức chat-completions (không phải cấu hình).
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
-    max_output_tokens: int | None = Field(default=None, ge=1, le=4000)
+    # Không đặt trần (le=...) ở đây: trần của max_output_tokens đọc từ .env
+    # qua MAX_OUTPUT_TOKENS_LIMIT và được service áp dụng (clamp).
+    # Nếu schema cũng chốt trần 4000 thì sửa .env sẽ không có tác dụng.
+    max_output_tokens: int | None = Field(default=None, ge=1)
     # Tùy chọn: system_prompt nếu BE muốn tách system/data (không bắt buộc).
     system_prompt: str | None = Field(default=None, max_length=4000)
 
@@ -54,7 +58,8 @@ class VisionRequest(BaseModel):
         default=None, description="VD: image/png, image/jpeg."
     )
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
-    max_output_tokens: int | None = Field(default=None, ge=1, le=4000)
+    # Trần token lấy từ .env (MAX_OUTPUT_TOKENS_LIMIT), không hardcode ở schema.
+    max_output_tokens: int | None = Field(default=None, ge=1)
     system_prompt: str | None = Field(default=None, max_length=4000)
 
 
