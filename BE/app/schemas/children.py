@@ -109,7 +109,7 @@ from pydantic import BaseModel, Field, field_validator
 class ChildBase(BaseModel):
 
     name: str = Field(min_length=1, max_length=120)
-    age: int = Field(ge=2, le=15)
+    age: int = Field(ge=3, le=15)
     gender: str|None = Field(default=None, max_length=60)
     interests: list[str] = Field(default_factory=list)
 

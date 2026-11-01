@@ -222,7 +222,7 @@ class OpenEvaluationData(_Base):
     score:float = Field(..., ge=0, le=10) # điểm phải nằm trong [0 ,10]
     is_appropriate: bool # câu trả lời có phù hợp không
     feedback: str = Field(...,min_length=1) # nhận xét tiếng Việt, bắt buộc
-    strenghts : list[str] = [] # điểm tốt, cho phép rỗng
+    strengths: list[str] = Field(default_factory=list)
     suggestions: list[str]  # gợi ý cải thiện, bắt buộc có trường này
     sample_answer: str=""  # câu trả lời mẫu, cho phép rỗng
 

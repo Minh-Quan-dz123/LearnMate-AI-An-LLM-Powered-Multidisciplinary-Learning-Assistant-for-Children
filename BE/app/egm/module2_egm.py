@@ -291,7 +291,7 @@ async def generate_open_questions(request: OpenGenerateRequest, age: int) -> Ope
                 content, request.question_count
             )
         except LLMOutputError as e:
-            last_error = 0 
+            last_error = e
             continue    #lỗi, thử lại
         return OpenExerciseData(   #BƯớc 7 , 8 , 9
             exercise_id = uuid.uuid4().hex ,

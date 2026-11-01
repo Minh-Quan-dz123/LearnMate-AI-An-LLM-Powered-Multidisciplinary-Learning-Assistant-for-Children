@@ -120,11 +120,14 @@ from app.egm.module1_egm import (
 )
 
 from app.llm_client import (
-    LLMResponseError,
+    LLMClientError,
     LLMTimeoutError,
     LLMUnavailableError,
     call_llm,
 )
+
+logger = logging.getLogger(__name__)
+
 
 from app.schemas.module1 import (
     QuizGenerateRequest,
@@ -276,7 +279,7 @@ async def generate_quiz_endpoint(
             age=age,
 
             # Hàm gửi HTTP request đến LLM Server.
-            llm_generate=call_llm,
+            llm_generate=call_llm_for_quiz,
 
             # Model lấy từ file .env thông qua Settings.
             model_name=get_settings().LLM_GENERATION_MODEL,
@@ -306,7 +309,7 @@ async def generate_quiz_endpoint(
         )
 
     except (
-        LLMResponseError,
+        LLMClientError,
         InvalidModelOutputError
     ):
 
@@ -325,3 +328,28 @@ async def generate_quiz_endpoint(
         message="Tạo bài tập thành công",
         data=quiz_data
     )
+
+
+async def call_llm_for_quiz(payload: dict) -> dict:
+    """
+    Chuyển đổi giao diện giữa Module 1 và llm_client.
+
+    Module 1 EGM:
+        Input: dict payload
+        Output: dict response
+
+    llm_client hiện tại:
+        Input: task, prompt, model, ...
+        Output: str content
+    """
+
+    # Tách dict thành các keyword arguments cho call_llm.
+    content = await call_llm(**payload)
+
+    # Đóng gói chuỗi content về dạng EGM Module 1 mong đợi.
+    return {
+        "success": True,
+        "data": {
+            "content": content
+        }
+    }
