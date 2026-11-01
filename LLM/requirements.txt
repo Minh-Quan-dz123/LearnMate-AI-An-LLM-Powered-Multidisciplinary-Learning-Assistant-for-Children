@@ -1,0 +1,19 @@
+# ============================================================
+# FILE: requirements.txt
+# PHỤ TRÁCH: Hoàng Tùng (Người 4)
+#
+# Phụ thuộc của LLM Server (Python 3.11+).
+# Cài đặt: pip install -r requirements.txt
+#
+# Dùng dấu >= để tương thích nhiều phiên bản Python
+# (3.11 - 3.14). Đã kiểm thử cài đặt thành công trên Python 3.14.
+# ============================================================
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+httpx>=0.28.0
+
+# Kiểm thử tự động
+pytest>=8.0.0
