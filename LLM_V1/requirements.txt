@@ -1,0 +1,14 @@
+# Framework xây dựng HTTP API
+fastapi
+
+# ASGI Server dùng để chạy FastAPI
+uvicorn
+
+# SDK chính thức để gọi Gemini API
+google-genai
+
+# Đọc biến môi trường từ file .env
+python-dotenv
+
+# Gửi HTTP request khi cần kiểm thử API
+httpx
