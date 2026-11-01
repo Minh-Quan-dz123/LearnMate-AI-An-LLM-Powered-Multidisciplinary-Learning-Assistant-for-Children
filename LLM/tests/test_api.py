@@ -11,9 +11,13 @@
 import os
 
 # Đặt biến môi trường TRƯỚC khi import app (chế độ mock).
+# MODEL_* là BẮT BUỘC (không còn mặc định trong code), phải set đủ cả 4 biến.
 os.environ["MOCK_MODE"] = "true"
 os.environ["PROVIDER"] = "mock"
 os.environ["MODEL_GENERATION"] = "openai/gpt-4o-mini"
+os.environ["MODEL_EVALUATION"] = "openai/gpt-4o-mini"
+os.environ["MODEL_VISION"] = "openai/gpt-4o-mini"
+os.environ["MODEL_DEFAULT"] = "openai/gpt-4o-mini"
 os.environ["RATE_LIMIT_REQUESTS_PER_MINUTE"] = "100"
 os.environ["INTERNAL_API_KEY"] = ""
 

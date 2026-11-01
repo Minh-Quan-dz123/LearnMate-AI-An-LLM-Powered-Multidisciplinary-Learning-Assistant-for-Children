@@ -5,12 +5,28 @@
 # MỤC ĐÍCH:
 # Đọc và quản lý cấu hình của LLM Server từ biến môi trường / .env.
 # KHÔNG viết cứng API key, URL hay tên model vào mã nguồn.
+#
+# VỊ TRÍ FILE .ENV:
+# Nằm THƯ MỤC GỐC của dự án (bên ngoài folder LLM), được xác định
+# theo đường dẫn file này (LLM/app/config.py -> thư mục gốc dự án)
+# nên server chạy đúng kể cả khi khởi động từ folder khác.
+# Mẫu cấu hình: .env.example (thư mục gốc).
+#
+# TÊN MODEL:
+# Không có giá trị mặc định trong code. MODEL_GENERATION,
+# MODEL_EVALUATION, MODEL_VISION, MODEL_DEFAULT BẮT BUỘC phải có
+# trong .env (hoặc biến môi trường); thiếu thì server báo lỗi ngay
+# lúc khởi động và chỉ ra đúng biến nào còn thiếu.
 # ============================================================
 
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Thư mục gốc dự án = 2 cấp trên của file này (LLM/app/config.py).
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = PROJECT_ROOT / ".env"
 
 
 class Settings(BaseSettings):
@@ -53,11 +69,13 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # BE có thể gửi nhãn logic: "generation", "evaluation", "vision"
     # hoặc nhãn tiếng Việt trong contract. LLM Server ánh xạ sang model thật.
-    model_generation: str = "openai/gpt-4o-mini"
-    model_evaluation: str = "openai/gpt-4o-mini"
-    model_vision: str = "openai/gpt-4o-mini"
+    # KHÔNG đặt tên model mặc định trong code - mọi giá trị đọc từ .env
+    # (bắt buộc khai báo MODEL_* trong file .env ở thư mục gốc dự án).
+    model_generation: str
+    model_evaluation: str
+    model_vision: str
     # Model dùng khi nhãn logic không xác định được:
-    model_default: str = "openai/gpt-4o-mini"
+    model_default: str
 
     # Có cho phép BE gửi thẳng ID model của nhà cung cấp không?
     # false = chỉ chấp nhận nhãn logic (an toàn hơn, thống nhất model trong nhóm).
@@ -90,7 +108,7 @@ class Settings(BaseSettings):
     internal_api_key: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(ENV_FILE),  # .env ở THƯ MỤC GỐC dự án (không phụ thuộc CWD)
         env_file_encoding="utf-8",
         extra="ignore",
     )
