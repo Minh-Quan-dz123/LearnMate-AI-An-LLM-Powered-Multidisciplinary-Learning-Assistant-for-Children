@@ -10,14 +10,18 @@
 
 import os
 
+# Model ID dùng cho test (fixture). Code server không hardcode tên model -
+# đây chỉ là giá trị test set vào biến môi trường MODEL_*.
+TEST_MODEL_ID = "openai/gpt-4o-mini"
+
 # Đặt biến môi trường TRƯỚC khi import app (chế độ mock).
 # MODEL_* là BẮT BUỘC (không còn mặc định trong code), phải set đủ cả 4 biến.
 os.environ["MOCK_MODE"] = "true"
 os.environ["PROVIDER"] = "mock"
-os.environ["MODEL_GENERATION"] = "openai/gpt-4o-mini"
-os.environ["MODEL_EVALUATION"] = "openai/gpt-4o-mini"
-os.environ["MODEL_VISION"] = "openai/gpt-4o-mini"
-os.environ["MODEL_DEFAULT"] = "openai/gpt-4o-mini"
+os.environ["MODEL_GENERATION"] = TEST_MODEL_ID
+os.environ["MODEL_EVALUATION"] = TEST_MODEL_ID
+os.environ["MODEL_VISION"] = TEST_MODEL_ID
+os.environ["MODEL_DEFAULT"] = TEST_MODEL_ID
 os.environ["RATE_LIMIT_REQUESTS_PER_MINUTE"] = "100"
 os.environ["INTERNAL_API_KEY"] = ""
 
@@ -83,7 +87,7 @@ def test_generate_success(client):
 
     data = body["data"]
     assert isinstance(data["content"], str) and len(data["content"]) > 0
-    assert data["model"] == "openai/gpt-4o-mini"  # đã ánh xạ nhãn logic
+    assert data["model"] == TEST_MODEL_ID  # đã ánh xạ nhãn logic
     assert data["provider"] == "mock"
     assert data["attempts"] >= 1
     assert isinstance(data["latency_ms"], int)
@@ -148,12 +152,12 @@ def test_generate_temperature_out_of_range(client):
 @pytest.mark.parametrize(
     "logical,expected",
     [
-        ("generation", "openai/gpt-4o-mini"),
-        ("evaluation", "openai/gpt-4o-mini"),
-        ("vision", "openai/gpt-4o-mini"),
-        ("Mô hình tạo nội dung mặc định", "openai/gpt-4o-mini"),
-        (None, "openai/gpt-4o-mini"),  # MODEL_DEFAULT
-        ("unknown-label", "openai/gpt-4o-mini"),  # rơi về default khi ALLOW_DIRECT_MODEL=false
+        ("generation", TEST_MODEL_ID),
+        ("evaluation", TEST_MODEL_ID),
+        ("vision", TEST_MODEL_ID),
+        ("Mô hình tạo nội dung mặc định", TEST_MODEL_ID),
+        (None, TEST_MODEL_ID),  # MODEL_DEFAULT
+        ("unknown-label", TEST_MODEL_ID),  # rơi về default khi ALLOW_DIRECT_MODEL=false
     ],
 )
 def test_model_alias_resolution(client, logical, expected):
