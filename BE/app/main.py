@@ -111,8 +111,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import create_supabase_client
-from app.routers import auth, children
-
+from app.routers import auth, children, module1
 
 # 2. QUẢN LÝ VÒNG ĐỜI ỨNG DỤNG
 @asynccontextmanager
@@ -173,8 +172,14 @@ app.add_middleware(
 
 # 5. ĐĂNG KÝ ROUTER
 # Module quản lý tài khoản.
+# Đăng ký API quản lý tài khoản.
 app.include_router(auth.router)
+
+# Đăng ký API quản lý hồ sơ trẻ.
 app.include_router(children.router)
+
+# Đăng ký API sinh trắc nghiệm Module 1.
+app.include_router(module1.router)
 
 # Các Router sau sẽ đăng ký khi đã triển khai:
 #
