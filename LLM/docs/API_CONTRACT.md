@@ -47,7 +47,7 @@
 | `model` | string | không | Nhãn logic: `generation` \| `evaluation` \| `vision` (xem §5). Để trống → model mặc định |
 | `prompt` | string | **có** | Prompt do EGM phía BE xây dựng. Tối đa `MAX_PROMPT_CHARS` (mặc định 20000) ký tự |
 | `temperature` | number (0–2) | không | Mặc định `0.5` |
-| `max_output_tokens` | int (1–4000) | không | Mặc định `1800`, tự chặn trên theo cấu hình |
+| `max_output_tokens` | int (≥ 1) | không | Mặc định `DEFAULT_MAX_OUTPUT_TOKENS` (`.env`); vượt trần `MAX_OUTPUT_TOKENS_LIMIT` (`.env`) sẽ bị kẹp xuống trần đó |
 | `system_prompt` | string | không | Nếu BE muốn tách system/data (khuyến nghị khi ghép prompt theo mục 8 của README) |
 
 ```json
@@ -182,7 +182,7 @@ Với `ALLOW_DIRECT_MODEL=true`, BE có thể gửi thẳng ID model của OpenR
 | Timeout | `REQUEST_TIMEOUT_SECONDS=60` | Quá thời gian → `504 LLM_TIMEOUT` |
 | Retry | `MAX_RETRIES=2`, `RETRY_BACKOFF_SECONDS=1.0` | Chỉ retry khi timeout / 429 / lỗi mạng. Backoff lũy thừa: 1s → 2s. Lỗi đầu vào (422) **không** retry |
 | Rate limit | `RATE_LIMIT_REQUESTS_PER_MINUTE=30` | Sliding window in-memory; quá hạn mức → `429 LLM_RATE_LIMITED` |
-| Giới hạn kích thước | `MAX_PROMPT_CHARS=20000`, `MAX_OUTPUT_TOKENS_LIMIT=4000` | Chặn prompt/token quá lớn → `422` |
+| Giới hạn kích thước | `MAX_PROMPT_CHARS=20000`, `MAX_OUTPUT_TOKENS_LIMIT=4000` (đọc từ `.env`) | Prompt quá dài → `422`; token vượt trần → tự kẹp xuống `MAX_OUTPUT_TOKENS_LIMIT`. Schema không hardcode trần nào — sửa `.env` là đổi ngay |
 
 ## 7. Thay đổi so với README gợi ý & lý do
 
