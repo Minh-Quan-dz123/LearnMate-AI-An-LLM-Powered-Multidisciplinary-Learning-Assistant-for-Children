@@ -1,0 +1,96 @@
+{
+  "topic_id": "plants",
+  "title": "Bí ẩn chậu cây héo úa",
+  "introduction": "Chào thám tử nhí! Cây hoa hồng môn quý hiếm trong vườn trường bỗng nhiên bị héo rũ dù hôm qua vẫn tươi tắn. Hãy dùng kính lúp và kiến thức khoa học của bạn để tìm ra nguyên nhân thực sự nhé!",
+  "scene_id": "garden",
+  "background_prompt": "A sunny school garden with green bushes and flowers, children science exploration area, soft lighting, vibrant and friendly colors, vector art style",
+  "objects": [
+    {
+      "object_id": "obj_plant",
+      "label": "Cây héo úa",
+      "asset_id": "wilted_plant",
+      "slot_id": "center",
+      "clue_id": "clue_wilted"
+    },
+    {
+      "object_id": "obj_soil",
+      "label": "Đất trồng cây",
+      "asset_id": "dry_soil",
+      "slot_id": "soil",
+      "clue_id": "clue_dry_soil"
+    },
+    {
+      "object_id": "obj_notebook",
+      "label": "Sổ tay chăm sóc",
+      "asset_id": "notebook",
+      "slot_id": "fence",
+      "clue_id": "clue_notebook"
+    },
+    {
+      "object_id": "obj_can",
+      "label": "Bình tưới nước",
+      "asset_id": "watering_can",
+      "slot_id": "corner",
+      "clue_id": "clue_can"
+    }
+  ],
+  "clues": [
+    {
+      "id": "clue_wilted",
+      "title": "Lá cây rủ xuống",
+      "description": "Các lá cây bị mềm và rủ xuống, không còn cứng cáp như trước."
+    },
+    {
+      "id": "clue_dry_soil",
+      "title": "Đất khô nứt nẻ",
+      "description": "Đất trong chậu rất khô, có màu nhạt và xuất hiện các vết nứt nhỏ."
+    },
+    {
+      "id": "clue_notebook",
+      "title": "Nhật ký tưới cây",
+      "description": "Trang nhật ký ghi nhận đã 4 ngày rồi không ai tưới nước cho khu vườn."
+    },
+    {
+      "id": "clue_can",
+      "title": "Bình tưới trống rỗng",
+      "description": "Bình tưới nước hoàn toàn khô ráo và không còn giọt nước nào bên trong."
+    },
+    {
+      "id": "clue_experiment_result",
+      "title": "Thử nghiệm độ ẩm",
+      "description": "Sau khi tưới thử một ít nước, đất hút nước rất nhanh nhưng cây vẫn cần thời gian để phục hồi do đã thiếu nước lâu."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp_thirst",
+      "label": "Cây bị héo do thiếu nước lâu ngày."
+    },
+    {
+      "id": "hyp_cold",
+      "label": "Cây bị héo do thời tiết quá lạnh ban đêm."
+    },
+    {
+      "id": "hyp_monster",
+      "label": "Có quái vật ăn thực vật xuất hiện trong vườn."
+    }
+  ],
+  "experiments": [
+    {
+      "id": "exp_water_test",
+      "label": "Kiểm tra độ ẩm của đất và tưới thử một ít nước",
+      "result": "Đất khô khốc và hấp thụ nước ngay lập tức, chứng tỏ đất đang cực kỳ thiếu nước.",
+      "unlocks_clue_id": "clue_experiment_result"
+    }
+  ],
+  "solution": {
+    "hypothesis_id": "hyp_thirst",
+    "required_evidence_ids": [
+      "clue_dry_soil",
+      "clue_notebook"
+    ],
+    "explanation": "Chính xác! Dựa vào đất khô nứt nẻ và nhật ký tưới cây ghi nhận 4 ngày chưa tưới, kết hợp việc thiếu nước làm cây héo, chúng ta biết cây chỉ đang rất khát nước."
+  },
+  "feedback_if_wrong": "Chưa chính xác lắm thám tử ơi. Hãy kiểm tra lại độ ẩm của đất và trang nhật ký chăm sóc cây nhé!",
+  "feedback_if_correct": "Xin chúc mừng! Bạn đã phá án xuất sắc và giúp cây hoa lấy lại sức sống nhờ hiểu biết khoa học tuyệt vời!"
+}

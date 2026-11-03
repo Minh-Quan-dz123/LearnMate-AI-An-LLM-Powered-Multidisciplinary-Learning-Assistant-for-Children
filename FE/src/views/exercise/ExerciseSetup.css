@@ -1,0 +1,769 @@
+
+/*
+ * FILE: ExerciseSetup.css
+ *
+ * MỤC ĐÍCH:
+ * - Thiết kế giao diện chọn môn học, chủ đề.
+ * - Hiển thị giới hạn chủ đề trước khi mở rộng.
+ * - Tạo nút Xem thêm / Thu gọn sinh động.
+ *
+ * Chỉ áp dụng bên trong .exercise-page.
+ */
+
+/* =========================================
+   1. KHUNG CẤU HÌNH
+========================================= */
+
+.exercise-page .setup-panel {
+  padding: clamp(16px, 3vw, 28px);
+  border-radius: 24px;
+  background: #fff;
+  border: 2px solid #efedf7;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.exercise-page .setup-home {
+  margin-bottom: 20px;
+}
+
+/* =========================================
+   2. TIÊU ĐỀ
+========================================= */
+
+.exercise-page .setup-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  margin-bottom: 27px;
+  border-radius: 20px;
+
+  background: linear-gradient(
+    115deg,
+    #fff2dc,
+    #fff0f7 60%,
+    #ecf5ff
+  );
+}
+
+.exercise-page .setup-heading-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+
+  background: #fff;
+  color: #d6861d;
+}
+
+.exercise-page .setup-heading h2 {
+  margin: 0 0 5px;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-weight: 800;
+}
+
+.exercise-page .setup-heading p {
+  margin: 0;
+  color: #606978;
+  font-weight: 600;
+}
+
+/* =========================================
+   3. TIÊU ĐỀ CÁC BƯỚC
+========================================= */
+
+.exercise-page .setup-section {
+  margin-bottom: 28px;
+}
+
+.exercise-page .setup-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.exercise-page .setup-step {
+  display: grid;
+  place-items: center;
+  flex: none;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+  background: #eae5ff;
+  color: #6741c1;
+  font-size: 0.95rem;
+}
+
+.exercise-page .setup-help {
+  margin: -4px 0 15px;
+  color: #647080;
+}
+
+/* =========================================
+   4. LƯỚI MÔN HỌC VÀ CHỦ ĐỀ
+========================================= */
+
+.exercise-page .setup-subject-grid,
+.exercise-page .setup-topic-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.exercise-page .setup-subject-grid {
+  grid-template-columns: repeat(
+    3,
+    minmax(0, 1fr)
+  );
+}
+
+.exercise-page .setup-topic-grid {
+  grid-template-columns: repeat(
+    3,
+    minmax(0, 1fr)
+  );
+}
+
+/* =========================================
+   5. THẺ LỰA CHỌN
+========================================= */
+
+.exercise-page .setup-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+
+  min-width: 0;
+  gap: 8px;
+  padding: 9px;
+
+  border: 3px solid #e9ecf3;
+  border-radius: 18px;
+
+  background: #fff;
+  color: #303b4c;
+  font: inherit;
+  cursor: pointer;
+
+  transition:
+    transform .15s,
+    border-color .15s,
+    box-shadow .15s;
+}
+
+.exercise-page .setup-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: #b9a6ff;
+
+  box-shadow:
+    0 6px 16px rgba(93, 75, 147, .12);
+}
+
+.exercise-page .setup-card:focus-visible {
+  outline: 3px solid #74c0fc;
+  outline-offset: 3px;
+}
+
+.exercise-page .setup-card:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.exercise-page .setup-card.is-selected {
+  border-color: #845ef7;
+  background: #faf8ff;
+
+  box-shadow:
+    0 0 0 2px #eee7ff;
+}
+
+.exercise-page .setup-card strong {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.exercise-page .setup-card small {
+  color: #677182;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+/* DẤU TÍCH KHI CHỌN */
+
+.exercise-page .setup-check {
+  position: absolute;
+  z-index: 2;
+  right: 6px;
+  top: 6px;
+
+  display: grid;
+  place-items: center;
+
+  width: 27px;
+  height: 27px;
+
+  border-radius: 50%;
+  background: #7950f2;
+  color: #fff;
+}
+
+/* =========================================
+   6. HÌNH MINH HỌA
+========================================= */
+
+.exercise-page .setup-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 1.65;
+
+  border-radius: 13px;
+  overflow: hidden;
+
+  background: var(--setup-art-bg);
+  color: var(--setup-art-color);
+}
+
+.exercise-page .setup-art-halo {
+  position: absolute;
+  width: 45%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, .64);
+}
+
+.exercise-page .setup-art-symbol {
+  position: relative;
+  z-index: 1;
+  width: 40%;
+  height: 60%;
+}
+
+.exercise-page .setup-art-sparkle {
+  position: absolute;
+  left: 14%;
+  top: 8%;
+
+  font-size: 26px;
+  color: rgba(255, 255, 255, .95);
+}
+
+.exercise-page .setup-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.exercise-page .setup-topic .setup-art {
+  aspect-ratio: 2;
+}
+
+.exercise-page .setup-topic strong {
+  font-size: .9rem;
+}
+
+/* =========================================
+   7. GIỚI HẠN HIỂN THỊ CHỦ ĐỀ
+========================================= */
+
+/*
+ * Mặc định trên desktop:
+ * - Chỉ hiện 6 lựa chọn đầu tiên.
+ * - 3 cột x 2 hàng.
+ *
+ * Khi .is-expanded:
+ * - Hiện toàn bộ danh sách.
+ *
+ * Chủ đề đang chọn luôn hiển thị,
+ * ngay cả khi nằm ngoài 6 lựa chọn đầu.
+ */
+
+.exercise-page
+.setup-topic-grid:not(.is-expanded)
+.setup-topic:nth-child(n+7):not(.is-selected) {
+  display: none;
+}
+
+/*
+ * Hiệu ứng xuất hiện nhẹ khi mở rộng.
+ */
+
+.exercise-page
+.setup-topic-grid.is-expanded
+.setup-topic:nth-child(n+7) {
+  animation:
+    setup-topic-appear .3s ease both;
+}
+
+@keyframes setup-topic-appear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================
+   8. NÚT XEM THÊM / THU GỌN
+========================================= */
+
+/*
+ * Nút nằm giữa, ngay dưới danh sách.
+ * Thiết kế nổi bật nhưng không lấn át
+ * nút bắt đầu học.
+ */
+
+.exercise-page .setup-more-wrapper {
+  display: flex;
+  justify-content: center;
+
+  margin-top: 19px;
+  margin-bottom: 5px;
+}
+
+/* NÚT CHÍNH */
+
+.exercise-page .setup-more-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+
+  width: min(100%, 400px);
+  min-height: 68px;
+
+  padding: 11px 18px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+
+  background: linear-gradient(
+    110deg,
+    #8659ef 0%,
+    #6c78f2 55%,
+    #4b9ef1 100%
+  );
+
+  color: #fff;
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 5px 0 #554bc0,
+    0 9px 20px rgba(106, 90, 230, .18);
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    filter .18s ease;
+}
+
+/* HỌA TIẾT TRANG TRÍ */
+
+.exercise-page .setup-more-button::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+
+  width: 170px;
+  height: 170px;
+
+  top: -115px;
+  right: -35px;
+
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .12);
+}
+
+.exercise-page .setup-more-button::after {
+  content: '✦';
+  position: absolute;
+  left: 16px;
+  bottom: 6px;
+
+  font-size: 13px;
+  color: rgba(255, 255, 255, .6);
+}
+
+/* HIỆU ỨNG DI CHUỘT */
+
+.exercise-page
+.setup-more-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  filter: brightness(1.07);
+
+  box-shadow:
+    0 8px 0 #554bc0,
+    0 14px 24px rgba(106, 90, 230, .25);
+}
+
+/* HIỆU ỨNG KHI NHẤN */
+
+.exercise-page
+.setup-more-button:active:not(:disabled) {
+  transform: translateY(3px);
+
+  box-shadow:
+    0 2px 0 #554bc0,
+    0 4px 10px rgba(106, 90, 230, .15);
+}
+
+/* FOCUS CHO BÀN PHÍM */
+
+.exercise-page .setup-more-button:focus-visible {
+  outline: 4px solid #a5d8ff;
+  outline-offset: 4px;
+}
+
+.exercise-page .setup-more-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* BIỂU TƯỢNG LẤP LÁNH BÊN TRÁI */
+
+.exercise-page .setup-more-sparkle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, .19);
+  color: #fff8b7;
+
+  animation:
+    setup-sparkle-float 2.4s ease-in-out infinite;
+}
+
+@keyframes setup-sparkle-float {
+  0%, 100% {
+    transform: translateY(0) rotate(-7deg);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(7deg);
+  }
+}
+
+/* NỘI DUNG NÚT */
+
+.exercise-page .setup-more-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.exercise-page .setup-more-content strong {
+  font-size: 1.03rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.exercise-page .setup-more-content small {
+  font-size: .78rem;
+  color: rgba(255, 255, 255, .88);
+  font-weight: 600;
+}
+
+/* MŨI TÊN BÊN PHẢI */
+
+.exercise-page .setup-more-arrow {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 50%;
+
+  background: #fff;
+  color: #7554de;
+
+  box-shadow:
+    0 3px 8px rgba(45, 35, 110, .13);
+
+  transition:
+    transform .25s ease,
+    background-color .2s ease;
+}
+
+/*
+ * Khi chưa mở rộng:
+ * Mũi tên chuyển động lên xuống nhẹ
+ * để thu hút trẻ bấm vào.
+ */
+
+.exercise-page
+.setup-more-button:not(.is-expanded)
+.setup-more-arrow svg {
+  animation:
+    setup-arrow-bounce 1.7s ease-in-out infinite;
+}
+
+@keyframes setup-arrow-bounce {
+  0%, 100% {
+    transform: translateY(-2px);
+  }
+
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/*
+ * Khi mở rộng:
+ * Mũi tên quay lên 180 độ.
+ */
+
+.exercise-page
+.setup-more-button.is-expanded
+.setup-more-arrow {
+  transform: rotate(180deg);
+}
+
+/*
+ * Trạng thái thu gọn:
+ * Nền xanh tím nhẹ hơn để phân biệt.
+ */
+
+.exercise-page
+.setup-more-button.is-expanded {
+  background: linear-gradient(
+    110deg,
+    #6f79df,
+    #55a5d5
+  );
+
+  box-shadow:
+    0 5px 0 #4765aa,
+    0 9px 20px rgba(73, 115, 190, .16);
+}
+
+.exercise-page
+.setup-more-button.is-expanded:hover:not(:disabled) {
+  box-shadow:
+    0 8px 0 #4765aa,
+    0 14px 24px rgba(73, 115, 190, .22);
+}
+
+/* MẶC ĐỊNH ẨN NHÃN SỐ LƯỢNG MOBILE */
+
+.exercise-page .setup-count-mobile {
+  display: none;
+}
+
+/* =========================================
+   9. CẤU HÌNH CÁCH HỌC
+========================================= */
+
+.exercise-page .setup-options {
+  display: grid;
+  grid-template-columns: repeat(
+    2,
+    minmax(0, 1fr)
+  );
+
+  gap: 15px;
+}
+
+.exercise-page .setup-options label,
+.exercise-page .setup-custom-topic label {
+  display: block;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.exercise-page .setup-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+
+  padding: 11px 12px;
+
+  border: 2px solid #dce1e9;
+  border-radius: 12px;
+
+  background: #fff;
+  color: #303b4c;
+
+  font: inherit;
+}
+
+.exercise-page .setup-input:focus-visible {
+  outline: 3px solid #a5d8ff;
+  outline-offset: 2px;
+}
+
+.exercise-page .setup-custom-topic {
+  margin-top: 16px;
+}
+
+/* =========================================
+   10. NÚT BẮT ĐẦU
+========================================= */
+
+.exercise-page .setup-start {
+  width: 100%;
+  min-height: 57px;
+
+  border-radius: 16px;
+  font-size: 1.1rem;
+}
+
+/* =========================================
+   11. RESPONSIVE TABLET / MOBILE
+========================================= */
+
+@media (max-width: 650px) {
+
+  /* 2 cột trên điện thoại */
+
+  .exercise-page .setup-subject-grid,
+  .exercise-page .setup-topic-grid {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+
+  .exercise-page .setup-options {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * Mobile chỉ hiện 4 lựa chọn:
+   * 2 cột x 2 hàng.
+   *
+   * Chủ đề đang chọn vẫn luôn hiển thị.
+   */
+
+  .exercise-page
+  .setup-topic-grid:not(.is-expanded)
+  .setup-topic:nth-child(n+5):not(.is-selected) {
+    display: none;
+  }
+
+  /* Hiệu ứng xuất hiện các lựa chọn bổ sung */
+
+  .exercise-page
+  .setup-topic-grid.is-expanded
+  .setup-topic:nth-child(n+5) {
+    animation:
+      setup-topic-appear .3s ease both;
+  }
+
+  /* Hiển thị số lượng lựa chọn mobile */
+
+  .exercise-page .setup-count-desktop {
+    display: none;
+  }
+
+  .exercise-page .setup-count-mobile {
+    display: inline;
+  }
+
+  /* Nút có kích thước phù hợp */
+
+  .exercise-page .setup-more-button {
+    width: 100%;
+    min-height: 64px;
+
+    gap: 10px;
+    padding: 10px 13px;
+    border-radius: 17px;
+  }
+
+  .exercise-page .setup-more-content strong {
+    font-size: .94rem;
+  }
+
+  .exercise-page .setup-more-content small {
+    font-size: .72rem;
+  }
+
+  .exercise-page .setup-more-sparkle,
+  .exercise-page .setup-more-arrow {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/*
+ * Nếu một môn chỉ có 5 hoặc 6 lựa chọn:
+ * Desktop không cần nút Xem thêm.
+ * Mobile vẫn có nút vì chỉ hiện 4.
+ */
+
+@media (min-width: 651px) {
+  .exercise-page .setup-more-mobile-only {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .exercise-page .setup-subject-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-page .setup-heading {
+    align-items: flex-start;
+    padding: 14px;
+  }
+}
+
+/* =========================================
+   12. GIẢM HIỆU ỨNG CHUYỂN ĐỘNG
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .exercise-page .setup-card,
+  .exercise-page .setup-more-button,
+  .exercise-page .setup-more-arrow {
+    transition: none;
+  }
+
+  .exercise-page .setup-more-sparkle,
+  .exercise-page .setup-more-arrow svg,
+  .exercise-page
+  .setup-topic-grid.is-expanded
+  .setup-topic {
+    animation: none;
+  }
+}

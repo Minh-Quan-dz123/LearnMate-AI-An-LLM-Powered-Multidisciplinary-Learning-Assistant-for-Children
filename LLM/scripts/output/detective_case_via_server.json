@@ -1,0 +1,85 @@
+{
+  "topic_id": "plants",
+  "title": "Bi an cay hoa ua nang",
+  "introduction": "Chao tham tu tai ba! Cay hoa huong duong quy gia trong vuon truong dang bi heorua va guc dau xuong dat. Nhom ban hoc da quen dieu gi sao? Hay cung tim hieu nguyen nhan khien cay bi nhu the nhe!",
+  "scene_id": "garden",
+  "background_prompt": "A sunny school garden with green grass, flower beds, and a wooden fence, bright daylight, cartoon style.",
+  "objects": [
+    {
+      "object_id": "obj_soil",
+      "label": "Dat quanh goc cay",
+      "asset_id": "dry_soil",
+      "slot_id": "soil",
+      "clue_id": "clue_soil"
+    },
+    {
+      "object_id": "obj_can",
+      "label": "Binh tuoi nuoc",
+      "asset_id": "watering_can",
+      "slot_id": "corner",
+      "clue_id": "clue_can"
+    },
+    {
+      "object_id": "obj_note",
+      "label": "So nhat ky",
+      "asset_id": "notebook",
+      "slot_id": "center",
+      "clue_id": "clue_note"
+    }
+  ],
+  "clues": [
+    {
+      "id": "clue_soil",
+      "title": "Dat kho nut",
+      "description": "Dat trong chau rat kho, nut ne va khong co chut do am nao."
+    },
+    {
+      "id": "clue_can",
+      "title": "Binh tuoi het nuoc",
+      "description": "Binh tuoi nuoc nhe ten va hoan toan khong con nuoc ben trong."
+    },
+    {
+      "id": "clue_note",
+      "title": "Trang nhat ky bo trong",
+      "description": "Trang nhat ky ghi ro: 'Thu Ba: Tuoi cay' nhung da ba ngay nay khong co ai ghi them."
+    },
+    {
+      "id": "clue_water_test",
+      "title": "Hieu qua sau khi tuoi",
+      "description": "Sau khi tuoi nuoc it phut, la cay bat dau tuoi tinh tro lai va nguon nuoc da ngam vao dat."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp_water",
+      "label": "Cay bi heo vi thieu nuoc trong nhieu ngay."
+    },
+    {
+      "id": "hyp_cold",
+      "label": "Cay bi heo do thoi tiet qua lanh."
+    },
+    {
+      "id": "hyp_dark",
+      "label": "Cay bi heo do thieu anh sang mat troi."
+    }
+  ],
+  "experiments": [
+    {
+      "id": "exp_water",
+      "label": "Thu tuoi mot it nuoc vao goc cay xem dieu gi xay ra.",
+      "result": "Dat da hut het nuoc va cay dan dung thang hon sau mot thoi gian ngan.",
+      "unlocks_clue_id": "clue_water_test"
+    }
+  ],
+  "solution": {
+    "hypothesis_id": "hyp_water",
+    "required_evidence_ids": [
+      "clue_soil",
+      "clue_can",
+      "clue_water_test"
+    ],
+    "explanation": "Chinh xac! Dat kho nut, binh tuoi het nuoc va nhat ky bo trong cho thay cay da khong duoc cung cap nuoc trong nhieu ngay. Khi tuoi nuoc vao, cay da hoi phuc."
+  },
+  "feedback_if_wrong": "Chua dung roi tham tu oi. Hay kiem tra lai do am cua dat va so nhat ky tuoi cay nhe!",
+  "feedback_if_correct": "Xuat sac! Ban da giai ma thanh cong bi an va giup cay hoa song lai!"
+}

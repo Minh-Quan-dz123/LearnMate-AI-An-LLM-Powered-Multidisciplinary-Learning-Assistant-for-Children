@@ -1,0 +1,153 @@
+
+.lm3-visual {
+  margin: 12px 0;
+  text-align: center;
+}
+
+.lm3-visual-image {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #f5f7fa;
+}
+
+.lm3-visual-fallback {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 24px;
+  border-radius: 16px;
+  background: #eff6ff;
+  color: #536176;
+}
+
+.lm3-visual-fallback strong {
+  color: #1f436f;
+}
+
+.lm3-visual-sprite {
+  width: 100px;
+  height: 100px;
+}
+
+.lm3-visual-hint {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  align-items: center;
+  margin: 7px;
+  font-size: 13px;
+  color: #436188;
+}
+
+.lm3-visual-experiment {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #e6fcf5;
+  color: #087f5b;
+}
+
+.lm3-visual-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  margin: 9px auto 0;
+  background: #eee9ff;
+  color: #5f3dc4;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.lm3-visual-lightbox {
+  position: fixed;
+  z-index: 4500;
+  inset: 0;
+  background: rgba(0, 0, 0, .88);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.lm3-visual-lightbox img {
+  max-width: 100%;
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.lm3-visual-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  color: white;
+  border: 1px solid #ddd;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #303030;
+}
+
+.lm3-visual-compare {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #eef3ff;
+}
+
+.lm3-visual-compare > img,
+.lm3-visual-compare-front img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.lm3-visual-compare-front {
+  position: absolute;
+  inset: 0;
+}
+
+.lm3-visual-compare-line {
+  position: absolute;
+  top: 0;
+  bottom: 46px;
+  width: 3px;
+  background: white;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 1px #333;
+}
+
+.lm3-visual-compare label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, .72);
+  color: white;
+  display: grid;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.lm3-visual-compare input {
+  width: 100%;
+}
+
+.lm3-visual-compare-sprite {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #e2f5e3;
+}
+
+.lm3-visual-compare-sprite svg {
+  width: min(60%, 220px);
+  height: min(60%, 220px);
+}

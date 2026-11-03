@@ -23,8 +23,21 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from .config import Settings, get_settings
-from .errors import AppError, UnauthorizedError
-from .providers import build_provider
+
+from .errors import (
+    AppError,
+    InvalidInputError,
+    LLMUnavailableError,
+    RateLimitedError,
+    UnauthorizedError,
+)
+
+from .providers import (
+    build_provider,
+    build_detective_provider,
+    build_image_provider,
+)
+
 from .rate_limit import SlidingWindowRateLimiter
 from .schemas import (
     ErrorBody,
@@ -38,6 +51,10 @@ from .schemas import (
     ModelsResponse,
     VisionRequest,
     VisionResponse,
+    ImageGenerateRequest,
+    ImageGenerateResponse,
+    SpeechGenerateRequest,
+    SpeechGenerateResponse,
 )
 from .service import GenerationService
 
@@ -48,29 +65,142 @@ logging.basicConfig(
 logger = logging.getLogger("llm-server")
 
 
+
 # ============================================================
-# LIFESPAN: khởi tạo provider + service dùng chung
+# LIFESPAN - KHỞI TẠO VÀ GIẢI PHÓNG CÁC PROVIDER
 # ============================================================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
-    provider = build_provider(settings)
-    app.state.settings = settings
-    app.state.provider = provider
-    app.state.service = GenerationService(settings, provider)
+    """
+    Quản lý vòng đời LLM Server.
 
-    logger.info("LLM Server started | provider=%s | mock_mode=%s", provider.name, settings.mock_mode)
+    Khởi động:
+        1. Khởi tạo provider cũ (Module 1-2).
+        2. Khởi tạo GeminiProvider (Module 3).
+        3. Khởi tạo CloudflareImageProvider (Module 3).
+        4. Đưa các provider vào app.state.
+
+    Tắt server:
+        Đóng tất cả HTTP client để giải phóng kết nối.
+
+    Nếu cấu hình Module 3 chưa đủ:
+        Module 1-2 vẫn được khởi động bình thường.
+        API tương ứng của Module 3 sẽ trả lỗi 503.
+    """
+
+    settings = get_settings()
+
+    # --------------------------------------------------------
+    # 1. PROVIDER CŨ - MODULE 1 VÀ MODULE 2
+    # --------------------------------------------------------
+
+    provider = build_provider(settings)
+
+    # --------------------------------------------------------
+    # 2. GEMINI - SINH KỊCH BẢN MODULE 3
+    # --------------------------------------------------------
+
+    detective_provider = None
+
+    try:
+        detective_provider = build_detective_provider(settings)
+
+    except LLMUnavailableError as exc:
+        logger.warning(
+            "Gemini Module 3 chưa sẵn sàng: %s",
+            exc.message,
+        )
+
+    # --------------------------------------------------------
+    # 3. CLOUDFLARE - SINH ẢNH MODULE 3
+    # --------------------------------------------------------
+
+    image_provider = None
+
+    try:
+        image_provider = build_image_provider(settings)
+
+    except LLMUnavailableError as exc:
+        logger.warning(
+            "Cloudflare Module 3 chưa sẵn sàng: %s",
+            exc.message,
+        )
+
+    # --------------------------------------------------------
+    # 4. LƯU CÁC THÀNH PHẦN VÀO APP.STATE
+    # --------------------------------------------------------
+
+    app.state.settings = settings
+
+    # Provider mặc định vẫn là provider cũ.
+    app.state.provider = provider
+
+    # Provider chuyên tạo ảnh.
+    app.state.image_provider = image_provider
+
+    # Dispatcher đã viết ở đợt trước.
+    app.state.service = GenerationService(
+        settings,
+        provider,
+        detective_provider=detective_provider,
+    )
+
+    logger.info(
+        "LLM Server started | provider=%s | mock_mode=%s",
+        provider.name,
+        settings.mock_mode,
+    )
+
     logger.info(
         "Model map -> generation=%s | evaluation=%s | vision=%s",
         settings.model_generation,
         settings.model_evaluation,
         settings.model_vision,
     )
+
+    logger.info(
+        "Module 3 -> detective=%s | image=%s",
+        settings.model_detective,
+        settings.model_image,
+    )
+
     try:
+        # Từ đây FastAPI bắt đầu phục vụ request.
         yield
+
     finally:
-        await provider.close()
+        # ----------------------------------------------------
+        # 5. ĐÓNG TẤT CẢ PROVIDER KHI SERVER DỪNG
+        # ----------------------------------------------------
+
+        # Tránh đóng trùng cùng một instance.
+        closed: set[int] = set()
+
+        for active in (
+            image_provider,
+            detective_provider,
+            provider,
+        ):
+            if active is None:
+                continue
+
+            if id(active) in closed:
+                continue
+
+            closed.add(id(active))
+
+            try:
+                await active.close()
+
+            except Exception:
+                logger.exception(
+                    "Không thể đóng provider: %s",
+                    active.name,
+                )
+
         logger.info("LLM Server stopped")
+
 
 
 app = FastAPI(
@@ -196,6 +326,24 @@ async def list_models(request: Request) -> dict:
             purpose="Đánh giá bài vẽ (Module 3, sau MVP)",
         ),
     ]
+
+    
+    if (
+        settings.provider_tts == "gemini"
+        and settings.model_tts
+    ):
+        models.append(
+            ModelInfo(
+                logical_name="tts",
+                real_model_id=settings.model_tts,
+                purpose=(
+                    "Giọng cô giáo Module 3 "
+                    "(Gemini TTS)"
+                ),
+            )
+        )
+
+
     data = ModelsData(
         models=models,
         rate_limit_requests_per_minute=settings.rate_limit_requests_per_minute,
@@ -258,6 +406,229 @@ async def vision(body: VisionRequest, request: Request) -> dict:
     )
 
     return success_envelope("Mô hình đã phân tích hình ảnh", data)
+
+
+
+# ============================================================
+# ENDPOINT 5 - IMAGE GENERATION (MODULE 3)
+# POST /internal/llm/image/generate
+# ============================================================
+
+@app.post(
+    "/internal/llm/image/generate",
+    response_model=ImageGenerateResponse,
+    tags=["internal"],
+    dependencies=[Depends(require_internal_key)],
+)
+async def generate_image(
+    body: ImageGenerateRequest,
+    request: Request,
+) -> dict:
+    """
+    Sinh hình nền cho trò chơi Thám tử khoa học.
+
+    Luồng:
+        BE
+         |
+         v
+        FastAPI endpoint
+         |
+         v
+        Kiểm tra model + provider + rate limit
+         |
+         v
+        CloudflareImageProvider.generate_image()
+         |
+         v
+        Cloudflare Workers AI
+         |
+         v
+        ImageProviderResult
+         |
+         v
+        Response envelope -> BE
+
+    Endpoint này không lưu file ảnh.
+    BE chịu trách nhiệm lưu ảnh lên Supabase Storage.
+    """
+
+    # --------------------------------------------------------
+    # 1. KIỂM TRA NHÃN MODEL
+    # --------------------------------------------------------
+
+    # Chỉ chấp nhận nhãn logic "image".
+    # Không tự fallback về model text mặc định.
+    if body.model.strip().lower() != "image":
+        raise InvalidInputError(
+            "Model tạo ảnh phải dùng nhãn 'image'."
+        )
+
+    # --------------------------------------------------------
+    # 2. LẤY SETTINGS VÀ PROVIDER
+    # --------------------------------------------------------
+
+    settings: Settings = request.app.state.settings
+
+    image_provider = request.app.state.image_provider
+
+    if image_provider is None:
+        raise LLMUnavailableError(
+            "Cloudflare chưa được cấu hình, "
+            "hoặc MOCK_MODE đang bật."
+        )
+
+    # Model thực tế được cấu hình trong .env.
+    model_id = settings.model_image.strip()
+
+    if not model_id:
+        raise LLMUnavailableError(
+            "Thiếu MODEL_IMAGE trong cấu hình."
+        )
+
+    # --------------------------------------------------------
+    # 3. KIỂM TRA RATE LIMIT
+    # --------------------------------------------------------
+
+    # Dùng chung rate limiter với text service.
+    service: GenerationService = request.app.state.service
+
+    if not service.rate_limiter.check():
+        raise RateLimitedError()
+
+    # --------------------------------------------------------
+    # 4. XÁC ĐỊNH SỐ BƯỚC TẠO ẢNH
+    # --------------------------------------------------------
+
+    # Ưu tiên steps từ request.
+    # Nếu BE không truyền thì sử dụng .env.
+    steps = (
+        body.steps
+        if body.steps is not None
+        else settings.image_generation_steps
+    )
+
+    # --------------------------------------------------------
+    # 5. GỌI CLOUDFLARE
+    # --------------------------------------------------------
+
+    started = time.monotonic()
+
+    result = await image_provider.generate_image(
+        model=model_id,
+        prompt=body.prompt,
+        steps=steps,
+        timeout=settings.image_timeout_seconds,
+    )
+
+    elapsed_ms = int(
+        (time.monotonic() - started) * 1000
+    )
+
+    # --------------------------------------------------------
+    # 6. THÔNG BÁO GIỚI HẠN KÍCH THƯỚC
+    # --------------------------------------------------------
+
+    # Adapter FLUX.1 Schnell hiện chỉ gửi prompt/steps.
+    # width/height không được gửi sang Cloudflare.
+    size_note = None
+
+    if body.width is not None or body.height is not None:
+        size_note = (
+            "Model hiện chưa hỗ trợ ép kích thước ảnh; "
+            "width/height chỉ là thông tin yêu cầu và "
+            "không được gửi đến Cloudflare."
+        )
+
+    # --------------------------------------------------------
+    # 7. TRẢ KẾT QUẢ CHUẨN CHO BE
+    # --------------------------------------------------------
+
+    data = {
+        "image_base64": result.image_base64,
+        "mime_type": result.mime_type,
+        "model": result.model,
+        "provider": result.provider,
+        "task": body.task,
+        "latency_ms": elapsed_ms,
+        "size_note": size_note,
+    }
+
+    return success_envelope(
+        "Tạo ảnh thành công",
+        data,
+    )
+
+
+
+# ============================================================
+# MODULE 3 — GEMINI TTS
+# POST /internal/llm/speech/generate
+# ============================================================
+
+@app.post(
+    "/internal/llm/speech/generate",
+    response_model=SpeechGenerateResponse,
+    tags=["internal"],
+    dependencies=[Depends(require_internal_key)],
+)
+async def generate_speech_endpoint(
+    body: SpeechGenerateRequest,
+    request: Request,
+) -> dict:
+    from base64 import b64encode
+
+    from .providers.gemini_speech import (
+        generate_speech,
+        MAX_AUDIO_BYTES,
+    )
+
+    settings: Settings = request.app.state.settings
+
+    if (
+        settings.provider_tts != "gemini"
+        or not settings.model_tts
+    ):
+        raise LLMUnavailableError(
+            "Chưa bật Gemini TTS trong LLM Server."
+        )
+
+    if not (
+        request.app.state.service
+        .rate_limiter.check()
+    ):
+        raise RateLimitedError()
+
+    wav = await generate_speech(
+        base_url=settings.gemini_base_url,
+        api_key=settings.gemini_api_key,
+        model=settings.model_tts,
+        voice=settings.tts_voice_name,
+        text=body.text,
+        timeout=settings.tts_timeout_seconds,
+    )
+
+    if (
+        len(wav) > MAX_AUDIO_BYTES
+        or not wav.startswith(b"RIFF")
+        or wav[8:12] != b"WAVE"
+    ):
+        raise LLMUnavailableError(
+            "Âm thanh Gemini TTS "
+            "không đúng định dạng WAV."
+        )
+
+    return success_envelope(
+        "Đã tạo giọng đọc",
+        {
+            "audio_base64":
+                b64encode(wav).decode("ascii"),
+            "mime_type": "audio/wav",
+            "model": settings.model_tts,
+            "provider": "gemini",
+            "voice": settings.tts_voice_name,
+        },
+    )
+
 
 
 # ============================================================

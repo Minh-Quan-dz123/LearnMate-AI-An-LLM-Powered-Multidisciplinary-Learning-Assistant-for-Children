@@ -1,0 +1,1040 @@
+
+/* ======================================================
+   FILE: src/views/detective/DetectiveGame.css
+
+   CSS riêng cho màn chơi Module 3.
+   Tiền tố lm3- để không ảnh hưởng Module 1–2.
+   ====================================================== */
+
+.lm3-game {
+  width: 100%;
+}
+
+.lm3-game button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.lm3-game button:disabled {
+  cursor: not-allowed;
+  opacity: .67;
+}
+
+.lm3-game button:focus-visible {
+  outline: 3px solid #7950f2;
+  outline-offset: 3px;
+}
+
+/* ============ GIỚI THIỆU VỤ ÁN ============ */
+
+.lm3-intro {
+  padding: 22px 26px;
+  margin-bottom: 19px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: var(--shadow-md);
+}
+
+.lm3-intro h1 {
+  margin: 12px 0 7px;
+  font-size: clamp(23px, 3vw, 31px);
+  line-height: 1.25;
+  color: #253044;
+}
+
+.lm3-intro p {
+  color: #536176;
+  line-height: 1.65;
+  font-weight: 600;
+}
+
+/* ============ BỐ CỤC MÀN CHƠI ============ */
+
+.lm3-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(285px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.lm3-left {
+  min-width: 0;
+}
+
+.lm3-scene-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 3px 10px;
+  color: #46566b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lm3-scene-top > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lm3-found-count {
+  background: #f3f0ff;
+  color: #6741d9;
+  border-radius: 40px;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+/* ============ HIỆN TRƯỜNG 16:9 ============ */
+
+.lm3-scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+
+  background: linear-gradient(160deg, #c5e9ff, #f0f4ce);
+
+  border: 4px solid white;
+  border-radius: 24px;
+  overflow: hidden;
+
+  box-shadow: var(--shadow-md);
+  isolation: isolate;
+}
+
+.lm3-scene-image {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Nền dự phòng khi không tải được ảnh */
+
+.lm3-no-image {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  text-align: center;
+  gap: 8px;
+  padding: 20px;
+
+  color: #315a77;
+  background: linear-gradient(155deg, #d8f1ff, #dff5df);
+}
+
+.lm3-no-image > span {
+  font-size: 42px;
+}
+
+.lm3-no-image strong {
+  font-size: 15px;
+}
+
+.lm3-no-image small {
+  font-size: 12px;
+}
+
+/* ============ VẬT THỂ TƯƠNG TÁC ============ */
+
+.lm3-hotspot {
+  position: absolute;
+
+  top: var(--lm3-y);
+  left: var(--lm3-x);
+  z-index: 1;
+
+  transform: translate(-50%, -50%);
+
+  border: 0;
+  padding: 0;
+  background: transparent;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+
+  color: #283747;
+  min-width: 66px;
+}
+
+.lm3-hotspot-icon {
+  position: relative;
+
+  display: grid;
+  place-items: center;
+
+  width: clamp(46px, 6.4vw, 70px);
+  height: clamp(46px, 6.4vw, 70px);
+
+  padding: 5px;
+  background: rgba(255, 255, 255, .96);
+
+  border: 3px solid #ffd35d;
+  border-radius: 20px;
+
+  box-shadow:
+    0 4px 0 #cf9b41,
+    0 7px 15px #1c385a35;
+
+  transition: transform .17s, border-color .17s;
+
+  animation: lm3-bob 3.5s ease-in-out infinite;
+}
+
+/* Khi di chuột vào vật thể */
+
+.lm3-hotspot:hover .lm3-hotspot-icon,
+.lm3-hotspot:focus-visible .lm3-hotspot-icon {
+  transform: scale(1.1) translateY(-2px);
+  border-color: #ff922b;
+  animation-play-state: paused;
+}
+
+/* Vật thể đã khám phá */
+
+.lm3-hotspot.is-visited .lm3-hotspot-icon {
+  border-color: #63d69a;
+  background: #f2fff8;
+  animation: none;
+}
+
+.lm3-hotspot-name {
+  max-width: 124px;
+  padding: 4px 9px;
+
+  background: rgba(255, 255, 255, .96);
+  border-radius: 12px;
+
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 800;
+  text-align: center;
+
+  box-shadow: 0 2px 8px #1c385a20;
+}
+
+/* Dấu tích xanh của vật thể đã khám phá */
+
+.lm3-hotspot-tick {
+  position: absolute;
+  right: -3px;
+  top: -4px;
+
+  display: grid;
+  place-items: center;
+
+  width: 20px;
+  height: 20px;
+
+  border: 2px solid white;
+  background: #1faa6a;
+  color: white;
+
+  border-radius: 50%;
+}
+
+/* Overlay khi đang gọi Backend */
+
+.lm3-scene-wait {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+
+  background: rgba(255, 255, 255, .76);
+  backdrop-filter: blur(3px);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  font-size: 15px;
+  font-weight: 800;
+  color: #6741d9;
+  text-align: center;
+}
+
+.lm3-help {
+  margin-top: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 13px;
+  font-weight: 750;
+  color: #526174;
+}
+
+/* ============ POPUP MANH MỐI ============ */
+
+.lm3-popup {
+  position: relative;
+
+  margin-top: 15px;
+  padding: 18px 42px 18px 17px;
+
+  display: flex;
+  gap: 14px;
+
+  background: #fff8db;
+  border: 2px solid #ffd666;
+  border-radius: 19px;
+
+  box-shadow: 0 7px 16px #91620d13;
+
+  animation: lm3-pop .22s ease-out both;
+}
+
+.lm3-popup-badge {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
+
+  background: #ffe78c;
+  color: #a16a02;
+}
+
+.lm3-popup-body {
+  min-width: 0;
+}
+
+.lm3-popup-kicker {
+  display: block;
+
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+
+  color: #a16a02;
+}
+
+.lm3-popup h2 {
+  margin: 4px 0 6px;
+  font-size: 19px;
+  color: #65441a;
+}
+
+.lm3-popup p {
+  color: #58482f;
+  line-height: 1.55;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.lm3-popup-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  padding: 10px;
+  margin-top: 11px;
+
+  background: #fff;
+  border-radius: 10px;
+}
+
+.lm3-popup-result svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.lm3-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+
+  background: #fff;
+  color: #674b20;
+}
+
+/* ============ BỘ CÔNG CỤ THÁM TỬ ============ */
+
+.lm3-tools {
+  background: white;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.lm3-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  background: #f1f3f5;
+}
+
+.lm3-tabs button {
+  flex: 1;
+  min-width: 0;
+
+  border: none;
+  border-radius: 12px;
+  padding: 10px 4px;
+
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+
+  color: #667085;
+  background: transparent;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.lm3-tabs button.active {
+  background: white;
+  color: #7048e8;
+  box-shadow: 0 2px 7px #2d355419;
+}
+
+.lm3-panel {
+  padding: 19px;
+  max-height: 610px;
+  min-height: 320px;
+  overflow-y: auto;
+}
+
+.lm3-panel h2 {
+  margin: 0 0 7px;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.lm3-panel > p {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.55;
+}
+
+.lm3-panel h3 {
+  margin: 20px 0 10px;
+  font-size: 14px;
+}
+
+/* ============ SỔ MANH MỐI ============ */
+
+.lm3-empty {
+  padding: 20px 15px;
+  text-align: center;
+
+  border: 2px dashed #c5b2f8;
+  background: #f8f5ff;
+  color: #6547ad;
+
+  border-radius: 13px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lm3-clue {
+  padding: 12px;
+  margin-bottom: 9px;
+
+  background: #eff9ff;
+  border: 1px solid #b8e5fb;
+  border-radius: 13px;
+}
+
+.lm3-clue strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #176fa4;
+  font-size: 14px;
+}
+
+.lm3-clue p {
+  margin-top: 6px;
+  color: #536176;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ============ THỬ NGHIỆM ============ */
+
+.lm3-experiment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  text-align: left;
+  margin-bottom: 10px;
+  padding: 13px;
+
+  color: #344054;
+  background: #f7f9fc;
+
+  border: 2px solid #e7edf3;
+  border-radius: 14px;
+}
+
+.lm3-experiment:hover:not(:disabled) {
+  border-color: #b197fc;
+  background: #f5f0ff;
+}
+
+.lm3-experiment > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.lm3-experiment strong,
+.lm3-experiment small {
+  display: block;
+}
+
+.lm3-experiment strong {
+  font-size: 13px;
+}
+
+.lm3-experiment small {
+  font-size: 11px;
+  color: #6c7787;
+  margin-top: 4px;
+}
+
+/* ============ KẾT LUẬN ============ */
+
+.lm3-choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+
+  padding: 11px;
+  margin-bottom: 8px;
+
+  border: 2px solid #e9ecef;
+  border-radius: 13px;
+
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lm3-choice:has(input:checked) {
+  background: #f4f0ff;
+  border-color: #b197fc;
+}
+
+.lm3-choice input {
+  margin-top: 3px;
+  accent-color: #7950f2;
+  flex: none;
+}
+
+.lm3-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: #ff922b;
+  color: white;
+  font-weight: 800;
+
+  box-shadow: 0 4px 0 #d97706;
+}
+
+.lm3-submit:hover:not(:disabled) {
+  background: #f78818;
+  transform: translateY(-1px);
+}
+
+/* ============ THÔNG BÁO ============ */
+
+.lm3-message {
+  margin-top: 15px;
+  border-radius: 13px;
+  padding: 12px 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lm3-message > span {
+  flex: 1;
+}
+
+.lm3-message button {
+  border: 0;
+  background: transparent;
+  padding: 5px;
+
+  display: grid;
+  place-items: center;
+}
+
+.lm3-message-error {
+  color: #b42318;
+  background: #fff1f1;
+  border: 1px solid #ffa8a8;
+}
+
+.lm3-message-note {
+  color: #126b51;
+  background: #e6fcf5;
+  border: 1px solid #96f2d7;
+}
+
+/* ============ ANIMATION ============ */
+
+.lm3-rotate {
+  animation: lm3-rotate .9s linear infinite;
+}
+
+@keyframes lm3-bob {
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+@keyframes lm3-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lm3-pop {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============ LOADING SINH VỤ ÁN ============ */
+
+.lm3-generating {
+  margin-top: 18px;
+  padding: 17px;
+
+  border-radius: 16px;
+  border: 2px dashed #cbb7fa;
+
+  background: #f8f5ff;
+  color: #6741d9;
+  text-align: center;
+}
+
+.lm3-generating strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+}
+
+.lm3-generating p {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #69607e;
+}
+
+.lm3-generating-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.lm3-generating-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 100%;
+  background: #9b74ee;
+
+  animation: lm3-dot 1s infinite alternate;
+}
+
+.lm3-generating-dots i:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.lm3-generating-dots i:nth-child(3) {
+  animation-delay: .4s;
+}
+
+@keyframes lm3-dot {
+  to {
+    opacity: .2;
+    transform: translateY(-4px);
+  }
+}
+
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 860px) {
+  .lm3-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lm3-panel {
+    max-height: none;
+    min-height: 230px;
+  }
+}
+
+@media (max-width: 520px) {
+  .lm3-intro {
+    padding: 19px;
+  }
+
+  .lm3-scene {
+    border-width: 2px;
+    border-radius: 17px;
+  }
+
+  .lm3-hotspot {
+    min-width: 43px;
+  }
+
+  .lm3-hotspot-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    padding: 3px;
+    border-width: 2px;
+  }
+
+  .lm3-hotspot-name {
+    padding: 3px 5px;
+    font-size: 9px;
+    max-width: 83px;
+  }
+
+  .lm3-hotspot-tick {
+    width: 17px;
+    height: 17px;
+  }
+
+  .lm3-scene-top {
+    font-size: 11px;
+  }
+
+  .lm3-popup {
+    gap: 10px;
+    padding: 14px 38px 14px 12px;
+  }
+
+  .lm3-popup-badge {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .lm3-help {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm3-hotspot-icon,
+  .lm3-rotate,
+  .lm3-popup,
+  .lm3-generating-dots i {
+    animation: none;
+    transition: none;
+  }
+}
+
+
+
+/* ==================================================
+   MODULE 3 - ĐỢT 5
+   Hướng dẫn chơi + thông báo lỗi dễ nhìn
+   ================================================== */
+
+/* Khu vực hướng dẫn có thể mở rộng */
+.lm5-game-guide {
+  margin: 8px 0 18px;
+  border: 2px solid #d0bfff;
+  border-radius: 15px;
+  overflow: hidden;
+
+  background: #f8f5ff;
+}
+
+.lm5-game-guide summary {
+  padding: 13px 17px;
+  cursor: pointer;
+
+  color: #6741d9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lm5-game-guide summary:hover {
+  background: #f3f0ff;
+}
+
+.lm5-game-guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+
+  padding: 15px;
+  background: white;
+}
+
+.lm5-game-guide-content > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.lm5-game-guide-content > div > span {
+  font-size: 27px;
+}
+
+.lm5-game-guide-content p {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.lm5-game-guide-content strong {
+  color: #344054;
+  font-size: 13px;
+}
+
+.lm5-game-guide-content small {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Thông báo lỗi và góp ý vẫn dễ thấy khi cuộn */
+.lm3-game > .lm3-message {
+  position: sticky;
+  bottom: 14px;
+  z-index: 20;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .lm5-game-guide summary {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .lm5-game-guide-content {
+    padding: 12px;
+  }
+}
+
+
+/* =====================================================
+   MODULE 3 V2 — GIAI ĐOẠN 1, 2, 3
+   DÁN VÀO CUỐI FILE DetectiveGame.css
+   ===================================================== */
+
+/* Ảnh nền và hotspot dùng cùng tỷ lệ thật */
+.lm3-scene-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.lm3-scene-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.lm3-scene-controls .lm3-found-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lm3-scene-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 8px 12px;
+  border: 1px solid #c4b5fd;
+  border-radius: 12px;
+
+  background: #f5f3ff;
+  color: #5b21b6;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lm3-scene-viewport {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lm3-scene {
+  width: 100%;
+  height: auto;
+
+  /* Tỷ lệ thật được truyền từ DetectiveScene.tsx */
+  max-width: 100%;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
+.lm3-scene-image {
+  object-fit: contain;
+}
+
+/* Toàn màn hình */
+.lm3-scene-shell.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  padding: clamp(10px, 2vmin, 20px);
+  background: #152238;
+}
+
+.lm3-scene-shell.is-expanded .lm3-scene-top {
+  flex: none;
+  color: white;
+}
+
+.lm3-scene-shell.is-expanded .lm3-scene-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lm3-scene-shell.is-expanded .lm3-scene {
+  max-height: 100%;
+}
+
+/* Số lượt kết luận */
+.lm3-attempt-counter {
+  padding: 10px 14px;
+
+  border: 2px solid #e0c9fc;
+  border-radius: 12px;
+
+  background: #faf5ff;
+  color: #6741a5;
+  font-weight: 800;
+}
+
+/* Sổ tay manh mối có ảnh */
+.lm3-clue-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lm3-clue-thumbnail,
+.lm3-clue-thumbnail-fallback {
+  width: 86px;
+  height: 86px;
+  flex: 0 0 86px;
+
+  border-radius: 12px;
+  object-fit: cover;
+  background: #e7f5ff;
+}
+
+.lm3-clue-thumbnail-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+}
+
+.lm3-clue-card-text {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.lm3-clue-card-text strong {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lm3-clue-card-text small {
+  color: #52647a;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .lm3-scene-top {
+    flex-wrap: wrap;
+    row-gap: 7px;
+  }
+
+  .lm3-scene-expand {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+}

@@ -27,6 +27,12 @@ from typing import Any
 import httpx 
 from app.config import get_settings
 GENERATE_PATH = "/internal/llm/generate" # endpoint cuar LLM Server
+
+IMAGE_GENERATE_PATH = "/internal/llm/image/generate"
+
+import base64
+import binascii
+
 # 2. HÀM call_llm()
 #
 # Hàm đề xuất:
@@ -126,7 +132,7 @@ async def call_llm(
     #Bước 3 + 4 + 5 : gửi POST, kiếm tra HTTP status, đọc JSON
     #Không ghi log prompt hay header, thông báo lỗi chỉ chứa thông tin an toàn (mã lỗi)
     api_key = getattr(settings, "LLM_INTERNAL_API_KEY", None)
-    headers = {"API key": api_key} if api_key else {} # sẽ chỉnh sửa khi biết được LLM Server đọc key ở header nào
+    headers = {"X-Internal-Api-Key": api_key} if api_key else {}
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -190,12 +196,18 @@ class LLMUnavailableError(LLMClientError):
 
 #hàm phụ :đọc cấu hình
 
-def _setting(settings: Any, names : tuple[str, ...], default: Any ) -> Any:
-    for name in names: 
-        value = getattr(settings, name , None)
-        if value not in (None , ""):
-            return value 
-        return default
+def _setting(
+    settings: Any,
+    names: tuple[str, ...],
+    default: Any
+) -> Any:
+    for name in names:
+        value = getattr(settings, name, None)
+
+        if value not in (None, ""):
+            return value
+
+    return default
 
 
 # 4. QUY ƯỚC QUAN TRỌNG
@@ -205,3 +217,263 @@ def _setting(settings: Any, names : tuple[str, ...], default: Any ) -> Any:
 # - Không đánh giá câu trả lời trong file này.
 # - Không để lộ API Key trong log hoặc response.
 # - Module 1 và 2 phải tái sử dụng cùng một hàm.
+
+
+# ============================================================
+# MODULE 3 - SINH ẢNH NỀN QUA LLM SERVER
+# ============================================================
+
+async def call_image_generation(
+    prompt: str
+) -> tuple[bytes, str]:
+    """
+    Gọi LLM Server để tạo ảnh nền vụ án.
+
+    Luồng:
+        BE
+        -> LLM Server :8001
+        -> Cloudflare Workers AI
+        -> LLM Server
+        -> BE
+
+    Input:
+        prompt: mô tả ảnh nền do BE tạo.
+
+    Output:
+        (image_bytes, mime_type)
+
+    Ví dụ:
+        (b'...', 'image/png')
+
+    Không gọi Cloudflare trực tiếp từ BE.
+    Không trả Base64 ảnh lớn cho Frontend.
+    """
+
+    # 1. Đọc cấu hình.
+    settings = get_settings()
+
+    # 2. Header xác thực với LLM Server.
+    headers = (
+        {
+            "X-Internal-Api-Key":
+                settings.LLM_INTERNAL_API_KEY
+        }
+        if settings.LLM_INTERNAL_API_KEY
+        else {}
+    )
+
+    # 3. Request đúng contract Module 3.
+    payload = {
+        "task": "detective_background",
+        "model": "image",
+        "prompt": prompt
+    }
+
+    base_url = settings.LLM_SERVER_URL.rstrip("/")
+
+    # 4. Gửi yêu cầu tạo ảnh.
+    try:
+        async with httpx.AsyncClient(
+            timeout=settings.LLM_IMAGE_TIMEOUT_SECONDS
+        ) as client:
+
+            response = await client.post(
+                f"{base_url}{IMAGE_GENERATE_PATH}",
+                json=payload,
+                headers=headers
+            )
+
+            response.raise_for_status()
+            body = response.json()
+
+    except httpx.TimeoutException as exc:
+        raise LLMTimeoutError(
+            "Tạo ảnh nền quá thời gian chờ"
+        ) from exc
+
+    except httpx.HTTPError as exc:
+        raise LLMUnavailableError(
+            "Không gọi được LLM Server tạo ảnh"
+        ) from exc
+
+    except ValueError as exc:
+        raise LLMClientError(
+            "LLM Server trả ảnh không phải JSON"
+        ) from exc
+
+    # 5. Kiểm tra response envelope.
+    data = (
+        body.get("data")
+        if isinstance(body, dict)
+        and body.get("success") is True
+        else None
+    )
+
+    if not isinstance(data, dict):
+        raise LLMClientError(
+            "LLM Server không trả data ảnh"
+        )
+
+    encoded = data.get("image_base64")
+    mime = data.get("mime_type")
+
+    if (
+        not isinstance(encoded, str)
+        or mime not in ("image/png", "image/jpeg")
+    ):
+        raise LLMClientError(
+            "Ảnh trả về thiếu Base64 hoặc MIME không hợp lệ"
+        )
+
+    # 6. Giới hạn dung lượng Base64.
+    if len(encoded) > 14 * 1024 * 1024:
+        raise LLMClientError(
+            "Ảnh nền vượt giới hạn kích thước"
+        )
+
+    # 7. Giải mã ảnh.
+    try:
+        image = base64.b64decode(
+            encoded,
+            validate=True
+        )
+
+    except (binascii.Error, ValueError) as exc:
+        raise LLMClientError(
+            "Ảnh Base64 không hợp lệ"
+        ) from exc
+
+    # 8. Kiểm tra kích thước ảnh.
+    if not image or len(image) > 10 * 1024 * 1024:
+        raise LLMClientError(
+            "Ảnh nền không hợp lệ hoặc quá lớn"
+        )
+
+    # 9. Kiểm tra magic bytes.
+    if (
+        mime == "image/png"
+        and not image.startswith(b"\x89PNG\r\n\x1a\n")
+    ):
+        raise LLMClientError(
+            "Sai định dạng ảnh PNG"
+        )
+
+    if (
+        mime == "image/jpeg"
+        and not image.startswith(b"\xff\xd8\xff")
+    ):
+        raise LLMClientError(
+            "Sai định dạng ảnh JPEG"
+        )
+
+    # 10. Trả dữ liệu nhị phân cho Storage service.
+    return image, mime
+
+
+
+# ============================================================
+# MODULE 3 — GEMINI TTS
+#
+# BE -> LLM Server :8001
+# Không gọi Gemini trực tiếp từ BE.
+# ============================================================
+
+async def call_speech_generation(
+    text: str,
+) -> bytes:
+    settings = get_settings()
+
+    headers = (
+        {
+            "X-Internal-Api-Key":
+                settings.LLM_INTERNAL_API_KEY
+        }
+        if settings.LLM_INTERNAL_API_KEY
+        else {}
+    )
+
+    payload = {
+        "task": "detective_narration",
+        "model": "tts",
+        "voice": "teacher_vi",
+        "text": text,
+    }
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=settings.LLM_TTS_TIMEOUT_SECONDS
+        ) as client:
+            response = await client.post(
+                f"{settings.LLM_SERVER_URL.rstrip('/')}"
+                "/internal/llm/speech/generate",
+                json=payload,
+                headers=headers,
+            )
+
+            response.raise_for_status()
+            body = response.json()
+
+    except httpx.TimeoutException as exc:
+        raise LLMTimeoutError(
+            "Gemini TTS quá thời gian chờ."
+        ) from exc
+
+    except (
+        httpx.HTTPError,
+        ValueError,
+    ) as exc:
+        raise LLMUnavailableError(
+            "Không thể tạo giọng cô giáo lúc này."
+        ) from exc
+
+    data = (
+        body.get("data")
+        if (
+            isinstance(body, dict)
+            and body.get("success") is True
+        )
+        else None
+    )
+
+    if (
+        not isinstance(data, dict)
+        or data.get("mime_type") != "audio/wav"
+    ):
+        raise LLMClientError(
+            "LLM Server không trả WAV hợp lệ."
+        )
+
+    encoded = data.get("audio_base64")
+
+    if (
+        not isinstance(encoded, str)
+        or len(encoded) > 12 * 1024 * 1024
+    ):
+        raise LLMClientError(
+            "Âm thanh quá lớn hoặc thiếu dữ liệu."
+        )
+
+    try:
+        audio = base64.b64decode(
+            encoded,
+            validate=True,
+        )
+
+    except (
+        binascii.Error,
+        ValueError,
+    ) as exc:
+        raise LLMClientError(
+            "Âm thanh base64 không hợp lệ."
+        ) from exc
+
+    if (
+        len(audio) > 8 * 1024 * 1024
+        or not audio.startswith(b"RIFF")
+        or audio[8:12] != b"WAVE"
+    ):
+        raise LLMClientError(
+            "Dữ liệu WAV bị lỗi."
+        )
+
+    return audio

@@ -10,6 +10,7 @@
 # ============================================================
 
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 # ---------------------------------------------------------
@@ -149,4 +150,149 @@ class ModelsResponse(BaseModel):
     success: bool = True
     message: str = "Danh sách model đang cấu hình"
     data: ModelsData
+    error: dict | None = None
+
+
+
+# ============================================================
+# MODULE 3 - IMAGE GENERATION
+# API: POST /internal/llm/image/generate
+# ============================================================
+
+class ImageGenerateRequest(BaseModel):
+    """
+    Request tạo hình nền hiện trường.
+
+    BE gửi:
+        task   : tên tác vụ
+        model  : nhãn logic "image"
+        prompt : mô tả hình ảnh
+        steps  : số bước khuếch tán (tùy chọn)
+
+    width/height được nhận theo API contract nhưng
+    FLUX.1 Schnell trong adapter hiện tại chưa hỗ trợ
+    ép kích thước ảnh bằng hai tham số này.
+    """
+
+    task: str = Field(
+        default="detective_background",
+        min_length=1,
+        max_length=200,
+    )
+
+    model: str = Field(
+        default="image",
+        min_length=1,
+        max_length=100,
+    )
+
+    prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=2048,
+    )
+
+    steps: int | None = Field(
+        default=None,
+        ge=1,
+        le=8,
+    )
+
+    width: int | None = Field(
+        default=None,
+        ge=1,
+        le=2048,
+        description="Kích thước mong muốn, chưa được adapter áp dụng.",
+    )
+
+    height: int | None = Field(
+        default=None,
+        ge=1,
+        le=2048,
+        description="Kích thước mong muốn, chưa được adapter áp dụng.",
+    )
+
+
+class ImageGenerateData(BaseModel):
+    """
+    Dữ liệu ảnh trả cho BE.
+
+    image_base64:
+        Chuỗi mã hóa ảnh PNG/JPEG.
+
+    mime_type:
+        image/png hoặc image/jpeg.
+
+    model:
+        ID model Cloudflare thực tế.
+
+    provider:
+        "cloudflare"
+    """
+
+    image_base64: str
+    mime_type: str
+    model: str
+    provider: str
+    task: str
+    latency_ms: int
+
+    # Thông báo giới hạn kích thước nếu có yêu cầu width/height.
+    size_note: str | None = None
+
+
+class ImageGenerateResponse(BaseModel):
+    """Envelope thành công cho API tạo ảnh."""
+
+    success: bool = True
+    message: str = "Tạo ảnh thành công"
+    data: ImageGenerateData
+    error: dict | None = None
+
+
+
+# ============================================================
+# MODULE 3 — SPEECH API SCHEMAS
+# ============================================================
+
+class SpeechGenerateRequest(BaseModel):
+    task: Literal[
+        "detective_narration"
+    ] = "detective_narration"
+
+    model: Literal["tts"] = "tts"
+
+    voice: Literal[
+        "teacher_vi"
+    ] = "teacher_vi"
+
+    text: str = Field(
+        min_length=1,
+        max_length=2200,
+    )
+
+
+class SpeechGenerateData(BaseModel):
+    audio_base64: str
+
+    mime_type: Literal[
+        "audio/wav"
+    ] = "audio/wav"
+
+    model: str
+
+    provider: Literal[
+        "gemini"
+    ] = "gemini"
+
+    voice: str
+
+
+class SpeechGenerateResponse(BaseModel):
+    success: bool = True
+
+    message: str = "Đã tạo giọng đọc"
+
+    data: SpeechGenerateData
+
     error: dict | None = None

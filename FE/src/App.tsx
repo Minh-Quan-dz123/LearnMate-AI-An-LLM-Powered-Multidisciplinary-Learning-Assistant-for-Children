@@ -6,23 +6,34 @@ import { AuthPage } from './views/auth/AuthPage';
 import { ChildSelectPage } from './views/profiles/ChildSelectPage';
 import { Sparkles, RotateCcw } from 'lucide-react';
 import { ExercisePage } from './views/exercise/ExercisePage';
+import { ActivitySelect } from './views/activities/ActivitySelect';
+import { DetectivePage } from './views/detective/DetectivePage';
+
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
 
+  // choose: chọn hoạt động
+  // learn: Module 1–2
+  // detective: Module 3
+  const [activeActivity, setActiveActivity] = useState<'choose' | 'learn' | 'detective'>('choose');
+
   const handleLogout = () => {
     authService.logout();
     setCurrentUser(null);
     setActiveChild(null);
+    setActiveActivity('choose');
   };
 
   const handleSelectChild = (child: ChildProfile) => {
     setActiveChild(child);
+    setActiveActivity('choose');
   };
 
   const handleChangeChild = () => {
     setActiveChild(null);
+    setActiveActivity('choose');
   };
 
   // 1. Chưa đăng nhập -> Vào AuthPage
@@ -123,11 +134,29 @@ export function App() {
 
       {/* Main Content Area: Chuẩn bị nối tiếp sang Luồng 2 (Làm bài tập) */}
       {/* Màn hình cấu hình, làm và chấm bài */}
-      <ExercisePage
-        key={activeChild.child_id}
-        child={activeChild}
-        onGoHome={handleChangeChild}
-      />
+      {/* Màn hình chọn hoạt động hoặc module đã chọn */}
+      {activeActivity === 'choose' && (
+        <ActivitySelect
+          child={activeChild}
+          onChooseLearning={() => setActiveActivity('learn')}
+          onChooseDetective={() => setActiveActivity('detective')}
+        />
+      )}
+
+      {activeActivity === 'learn' && (
+        <ExercisePage
+          key={activeChild.child_id}
+          child={activeChild}
+          onGoHome={() => setActiveActivity('choose')}
+        />
+      )}
+
+      {activeActivity === 'detective' && (
+        <DetectivePage
+          child={activeChild}
+          onBackToActivities={() => setActiveActivity('choose')}
+        />
+      )}
     </div>
   );
 }

@@ -202,10 +202,10 @@ def _llm_error_response(
 # 6. HÀM LẤY TUỔI TRẺ TỪ SUPABASE
 # ============================================================
 
-async def _get_child_age(
+async def _get_child_profile(
     child_id: int,
     db: AsyncClient
-) -> int:
+) -> dict:
     """
     Truy vấn tuổi của trẻ dựa trên child_id.
 
@@ -244,7 +244,7 @@ async def _get_child_age(
     try:
         result = await (
             db.table("child_profiles")
-            .select("id, age")
+            .select("id, age, gender, interests")
             .eq("id", child_id)
             .limit(1)
             .execute()
@@ -280,11 +280,16 @@ async def _get_child_age(
         )
 
     # --------------------------------------------------------
-    # BƯỚC 4: LẤY VÀ KIỂM TRA TUỔI
+    # BƯỚC 4: LẤY THÔNG TIN HỒ SƠ TRẺ
     # --------------------------------------------------------
 
-    age = rows[0].get("age")
+    # Lấy bản ghi hồ sơ đầu tiên từ kết quả Supabase.
+    profile = rows[0]
 
+    # Lấy tuổi của trẻ.
+    age = profile.get("age")
+
+    # Kiểm tra tuổi hợp lệ trong khoảng 3 đến 15.
     if type(age) is not int or not 3 <= age <= 15:
         raise ChildProfileError(
             422,
@@ -293,10 +298,46 @@ async def _get_child_age(
         )
 
     # --------------------------------------------------------
-    # BƯỚC 5: TRẢ VỀ TUỔI
+    # BƯỚC 5: LẤY GIỚI TÍNH
     # --------------------------------------------------------
 
-    return age
+    # Lấy gender từ Database.
+    raw_gender = profile.get("gender")
+
+    # Nếu giới tính là chuỗi, loại bỏ khoảng trắng.
+    # Nếu NULL hoặc không hợp lệ, sử dụng None.
+    gender = (
+        (raw_gender.strip() or None)
+        if isinstance(raw_gender, str)
+        else None
+    )
+
+    # --------------------------------------------------------
+    # BƯỚC 6: LẤY DANH SÁCH SỞ THÍCH
+    # --------------------------------------------------------
+
+    # Lấy interests từ Database.
+    raw_interests = profile.get("interests")
+
+    # Chỉ giữ các sở thích hợp lệ.
+    if isinstance(raw_interests, list):
+        interests = [
+            item.strip()
+            for item in raw_interests
+            if isinstance(item, str) and item.strip()
+        ]
+    else:
+        interests = []
+
+    # --------------------------------------------------------
+    # BƯỚC 7: TRẢ VỀ THÔNG TIN HỒ SƠ
+    # --------------------------------------------------------
+
+    return {
+        "age": age,
+        "gender": gender,
+        "interests": interests
+    }
 
 
 # ============================================================
@@ -351,7 +392,7 @@ async def generate_open_questions(
     # --------------------------------------------------------
 
     try:
-        age = await _get_child_age(
+        profile = await _get_child_profile(
             child_id=request.child_id,
             db=db
         )
@@ -369,8 +410,10 @@ async def generate_open_questions(
 
     try:
         exercise = await egm_generate_open_questions(
-            request,
-            age
+            request=request,
+            age=profile["age"],
+            gender=profile["gender"],
+            interests=profile["interests"],
         )
 
     # --------------------------------------------------------
@@ -450,7 +493,7 @@ async def evaluate_open_answer(
     # --------------------------------------------------------
 
     try:
-        age = await _get_child_age(
+        profile = await _get_child_profile(
             child_id=request.child_id,
             db=db
         )
@@ -468,8 +511,10 @@ async def evaluate_open_answer(
 
     try:
         evaluation = await egm_evaluate_open_answer(
-            request,
-            age
+            request=request,
+            age=profile["age"],
+            gender=profile["gender"],
+            interests=profile["interests"],
         )
 
     # --------------------------------------------------------

@@ -1,0 +1,115 @@
+
+/*
+ * Hiệu ứng ăn mừng Module 3 V3.
+ */
+
+.lm3-v3-celebration {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
+}
+
+.lm3-v3-celebration-icons {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(26px, 4vw, 42px);
+  white-space: nowrap;
+  animation:
+    lm3-v3-icons-pop
+    0.8s ease-out both;
+}
+
+.lm3-v3-confetti {
+  position: absolute;
+  top: -55px;
+  font-size: 19px;
+  opacity: 0;
+  animation-name: lm3-v3-confetti-fall;
+  animation-timing-function:
+    cubic-bezier(0.25, 0.7, 0.5, 1);
+  animation-fill-mode: both;
+}
+
+/* Biểu tượng rơi xuống màn hình. */
+@keyframes lm3-v3-confetti-fall {
+  0% {
+    transform:
+      translateY(-20px)
+      rotate(0);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      translateY(650px)
+      rotate(540deg);
+    opacity: 0;
+  }
+}
+
+/* Biểu tượng xuất hiện sinh động. */
+@keyframes lm3-v3-icons-pop {
+  0% {
+    transform:
+      translateX(-50%)
+      scale(0.1);
+    opacity: 0;
+  }
+
+  70% {
+    transform:
+      translateX(-50%)
+      scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      translateX(-50%)
+      scale(1);
+    opacity: 1;
+  }
+}
+
+/* Nút nghe lại âm thanh chiến thắng. */
+.lm3-v3-celebration-replay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffd166;
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin: 12px 0;
+  background: #fff7df;
+  color: #8b4a05;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lm3-v3-celebration-replay:hover {
+  background: #ffedbc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm3-v3-confetti {
+    animation: none;
+    display: none;
+  }
+
+  .lm3-v3-celebration-icons {
+    animation: none;
+  }
+}

@@ -64,6 +64,31 @@ class Settings(BaseSettings):
     openai_compat_base_url: str = "http://localhost:11434/v1"
     openai_compat_api_key: str = "ollama"
 
+    
+    # --------------------------------------------------------
+    # PROVIDER MỚI - MODULE 3: THÁM TỬ KHOA HỌC
+    # --------------------------------------------------------
+
+    # Gemini dùng để sinh kịch bản vụ án.
+    # Tách khỏi PROVIDER chung của Module 1 và Module 2.
+    provider_detective: str = "gemini"
+
+    # API key Google Gemini.
+    gemini_api_key: str = ""
+
+    # Gemini REST API.
+    gemini_base_url: str = (
+        "https://generativelanguage.googleapis.com/v1beta"
+    )
+
+    # Cloudflare dùng để tạo hình nền hiện trường.
+    provider_image: str = "cloudflare"
+
+    # Thông tin xác thực Cloudflare Workers AI.
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+
+
     # --------------------------------------------------------
     # 3. CẤU HÌNH MODEL (ÁNH XẠ NHÃN LOGIC -> MODEL THẬT)
     # --------------------------------------------------------
@@ -77,6 +102,26 @@ class Settings(BaseSettings):
     # Model dùng khi nhãn logic không xác định được:
     model_default: str
 
+    
+    # --------------------------------------------------------
+    # MODEL MỚI - MODULE 3
+    # --------------------------------------------------------
+
+    # Model Gemini sinh kịch bản Thám tử khoa học.
+    model_detective: str = ""
+
+    # Model Cloudflare tạo hình nền hiện trường.
+    model_image: str = ""
+
+    # ============================================================
+    # MODULE 3 — GEMINI TTS
+    # ============================================================
+    provider_tts: str = "gemini"
+    model_tts: str = ""
+    tts_voice_name: str = "Aoede"
+    tts_timeout_seconds: float = 90.0
+
+
     # Có cho phép BE gửi thẳng ID model của nhà cung cấp không?
     # false = chỉ chấp nhận nhãn logic (an toàn hơn, thống nhất model trong nhóm).
     allow_direct_model: bool = False
@@ -85,6 +130,15 @@ class Settings(BaseSettings):
     # 4. GIỚI HẠN GỌI MODEL
     # --------------------------------------------------------
     request_timeout_seconds: float = 60.0
+
+    
+    # Timeout riêng cho Cloudflare sinh ảnh.
+    image_timeout_seconds: float = 120.0
+
+    # Số bước khuếch tán của FLUX.1 Schnell.
+    image_generation_steps: int = 4
+
+
     # Số lần thử lại tối đa SAU lần gọi đầu tiên (retry on timeout/429/5xx).
     max_retries: int = 2
     # Khoảng nghỉ cơ bản giữa các lần retry (nhân lũy thừa 2).

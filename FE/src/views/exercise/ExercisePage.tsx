@@ -1,26 +1,56 @@
 
-import { useState, type CSSProperties } from 'react';
-import { House } from 'lucide-react';
+/**
+ * FILE: ExercisePage.tsx
+ *
+ * MỤC ĐÍCH:
+ * - Quản lý state bài tập.
+ * - Gọi API tạo bài.
+ * - Xử lý nộp từng câu.
+ * - Tính điểm và nhận xét.
+ * - Điều phối ba màn hình:
+ *   ExerciseSetup / ExerciseDoing / ExerciseResult.
+ */
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { ChildProfile } from '../../types/child';
 
 import type {
-  Subject, Level, QuestionType,
-  QuizGenerateData, OpenGenerateData, OpenEvaluateData,
+  Level,
+  OpenEvaluateData,
+  OpenGenerateData,
+  QuestionType,
+  QuizGenerateData,
+  Subject,
 } from '../../types/exercise';
 
 import { SUBJECT_TOPICS } from '../../constants/subjects';
 import { exerciseService } from '../../services/exerciseService';
+
 import {
   gradeQuiz,
   type QuizGradingSummary,
 } from '../../utils/grader';
 
+import { useVoiceInput } from '../../hooks/useVoiceInput';
+
+import { ExerciseSetup } from './ExerciseSetup';
+import { ExerciseDoing } from './ExerciseDoing';
+import { ExerciseResult } from './ExerciseResult';
+
+import './ExercisePage.css';
+
+// =====================================================
+// 1. KIỂU DỮ LIỆU
+// =====================================================
+
 interface Props {
   child: ChildProfile;
-
-  // Hàm điều hướng về màn hình chọn hồ sơ trẻ.
-  // Hàm này được truyền từ App.tsx.
   onGoHome: () => void;
 }
 
@@ -30,50 +60,152 @@ type QuizType =
   | 'Trắc nghiệm một đáp án'
   | 'Trắc nghiệm nhiều đáp án';
 
-// CSS đơn giản, tái sử dụng theme đang có của FE
-const panel: CSSProperties = {
-  background: 'white',
-  borderRadius: 20,
-  padding: 24,
-  boxShadow: 'var(--shadow-sm)',
-  marginBottom: 20,
-};
+// =====================================================
+// 2. LỜI KHEN THEO ĐIỂM
+// =====================================================
 
-const field: CSSProperties = {
-  width: '100%',
-  padding: 12,
-  borderRadius: 12,
-  border: '2px solid var(--color-border)',
-  font: 'inherit',
-};
+function getPraise(score: number) {
+  if (score >= 9) {
+    return {
+      title: '🏆 Xuất sắc!',
+      detail:
+        'Con làm rất giỏi! Hãy tiếp tục khám phá những điều thú vị nhé!',
+    };
+  }
 
-const label: CSSProperties = {
-  display: 'block',
-  fontWeight: 700,
-  marginBottom: 6,
-};
+  if (score >= 7) {
+    return {
+      title: '🌟 Tốt lắm!',
+      detail:
+        'Con đã nắm được nhiều kiến thức rồi đấy! Cố gắng phát huy nhé!',
+    };
+  }
 
-export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU HÌNH
-  const [subject, setSubject] =
-    useState<Subject>('Khoa học tự nhiên');
+  if (score >= 5) {
+    return {
+      title: '💪 Cố gắng rất tốt!',
+      detail:
+        'Con đã có tiến bộ! Hãy luyện tập thêm để ngày càng giỏi hơn nhé!',
+    };
+  }
+
+  return {
+    title: '🌱 Cùng thử lại nhé!',
+    detail:
+      'Con đã hoàn thành bài tập rồi! Đừng ngại thử lại và học thêm điều mới nhé!',
+  };
+}
+
+// =====================================================
+// 3. TEXT-TO-SPEECH
+// =====================================================
+
+
+function speak(text: string) {
+  if (
+    typeof window === 'undefined' ||
+    !('speechSynthesis' in window)
+  ) {
+    return;
+  }
+
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  // Giọng đọc phù hợp với trẻ em
+  utterance.lang = 'vi-VN';
+  utterance.rate = 0.87;
+  utterance.pitch = 1.12;
+  utterance.volume = 1;
+
+  const voices = synth.getVoices();
+
+  const vietnameseVoices = voices.filter(
+    (voice) => voice.lang.toLowerCase().startsWith('vi')
+  );
+
+  // Ưu tiên giọng nữ tiếng Việt nếu có
+  const femaleVoice = vietnameseVoices.find(
+    (voice) =>
+      /hoaimy|hoài my|female|thao|thảo|linh|nữ/i.test(
+        voice.name
+      )
+  );
+
+  const selectedVoice =
+    femaleVoice ?? vietnameseVoices[0];
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  synth.speak(utterance);
+}
+
+
+function stopReading() {
+  if (
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window
+  ) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+// =====================================================
+// 4. COMPONENT CHÍNH
+// =====================================================
+
+export function ExercisePage({
+  child,
+  onGoHome,
+}: Props) {
+  // ===================================================
+  // 4.1. STATE CẤU HÌNH
+  // ===================================================
+
+  const [subject, setSubject] = useState<Subject>(
+    'Khoa học tự nhiên'
+  );
 
   const [topicChoice, setTopicChoice] = useState(
     SUBJECT_TOPICS['Khoa học tự nhiên'][0]
   );
 
   const [customTopic, setCustomTopic] = useState('');
-  const [level, setLevel] = useState<Level>('Cơ bản');
+
+  const [level, setLevel] = useState<Level>(
+    'Cơ bản'
+  );
 
   const [questionType, setQuestionType] =
-    useState<QuestionType>('Trắc nghiệm một đáp án');
+    useState<QuestionType>(
+      'Trắc nghiệm một đáp án'
+    );
 
-  const [questionCount, setQuestionCount] = useState(2);
+  const [questionCount, setQuestionCount] =
+    useState(2);
 
-  // 2. STATE BÀI TẬP
-  const [stage, setStage] = useState<Stage>('config');
+  // ===================================================
+  // 4.2. STATE BÀI TẬP
+  // ===================================================
 
-  const [quiz, setQuiz] = useState<QuizGenerateData | null>(null);
-  const [open, setOpen] = useState<OpenGenerateData | null>(null);
+  const [stage, setStage] =
+    useState<Stage>('config');
+
+  const [quiz, setQuiz] =
+    useState<QuizGenerateData | null>(null);
+
+  const [open, setOpen] =
+    useState<OpenGenerateData | null>(null);
+
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
+
+  const [completedCount, setCompletedCount] =
+    useState(0);
 
   const [selected, setSelected] =
     useState<Record<string, string[]>>({});
@@ -81,7 +213,6 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
   const [written, setWritten] =
     useState<Record<string, string>>({});
 
-  // 3. STATE KẾT QUẢ
   const [quizResult, setQuizResult] =
     useState<QuizGradingSummary | null>(null);
 
@@ -92,24 +223,126 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
+  const [autoRead, setAutoRead] = useState(true);
+
+  const [
+    finishedSpeechQuestionId,
+    setFinishedSpeechQuestionId,
+  ] = useState<string | null>(null);
+
+  // ===================================================
+  // 4.3. SPEECH-TO-TEXT
+  // ===================================================
+
+  const onSpeechText = useCallback(
+    (questionId: string, text: string) => {
+      setWritten((prev) => ({
+        ...prev,
+        [questionId]: text,
+      }));
+    },
+    []
+  );
+
+  const voice = useVoiceInput(onSpeechText);
+
+  const { abort: abortVoice } = voice;
+
+  // ===================================================
+  // 4.4. GIÁ TRỊ TÍNH TOÁN
+  // ===================================================
+
   const topic =
     topicChoice === 'Chủ đề khác'
       ? customTopic.trim()
       : topicChoice;
 
-  const isOpen = questionType === 'Câu trả lời mở';
+  const isOpen =
+    questionType === 'Câu trả lời mở';
 
-  /**
-   * 4. SINH BÀI TẬP
-   * - Gọi Module 1 nếu là trắc nghiệm.
-   * - Gọi Module 2 nếu là câu hỏi mở.
-   */
-  const generate = async () => {
-    if (!topic || topic.length > 100) {
-      setError('Chủ đề phải có từ 1 đến 100 ký tự.');
+  const questions =
+    quiz?.questions ?? open?.questions ?? [];
+
+  const total = questions.length;
+
+  const current = questions[currentIndex];
+
+  const reviewing =
+    currentIndex < completedCount;
+
+  const isMulti =
+    quiz?.question_type ===
+    'Trắc nghiệm nhiều đáp án';
+
+  // ===================================================
+  // 5. TẠO NỘI DUNG ĐỌC CÂU HỎI
+  // ===================================================
+
+  const readingText = useMemo(() => {
+    if (!current || stage !== 'doing') {
+      return '';
+    }
+
+    if (quiz) {
+      return [
+        `Câu ${currentIndex + 1}. ${
+          quiz.questions[currentIndex].content
+        }`,
+
+        ...quiz.questions[currentIndex].options.map(
+          (option) =>
+            `Đáp án ${option.option_id}. ${option.text}.`
+        ),
+
+        isMulti
+          ? 'Con hãy chọn tất cả đáp án đúng nhé!'
+          : 'Con hãy chọn một đáp án đúng nhé!',
+      ].join(' ');
+    }
+
+    return (
+      `Câu ${currentIndex + 1}. ${current.content}. ` +
+      'Con hãy nói hoặc viết câu trả lời nhé!'
+    );
+  }, [
+    current,
+    currentIndex,
+    quiz,
+    isMulti,
+    stage,
+  ]);
+
+  // Tự động đọc khi chuyển câu.
+  useEffect(() => {
+    if (
+      stage !== 'doing' ||
+      !autoRead ||
+      !readingText
+    ) {
+      stopReading();
       return;
     }
 
+    speak(readingText);
+
+    return () => stopReading();
+  }, [stage, autoRead, readingText]);
+
+  // ===================================================
+  // 6. SINH BÀI TẬP
+  // ===================================================
+
+  const generate = async () => {
+    // Kiểm tra chủ đề.
+    if (!topic || topic.length > 100) {
+      setError(
+        'Chủ đề phải có từ 1 đến 100 ký tự.'
+      );
+
+      return;
+    }
+
+    // Kiểm tra số câu.
     if (
       !Number.isInteger(questionCount) ||
       questionCount < 1 ||
@@ -123,6 +356,9 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
     setBusy(true);
     setStatus('Đang tạo bài tập...');
 
+    stopReading();
+    abortVoice();
+
     try {
       const common = {
         child_id: child.child_id,
@@ -132,35 +368,56 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
         question_count: questionCount,
       };
 
+      // Câu hỏi mở.
       if (isOpen) {
-        const res = await exerciseService.generateOpen({
-          ...common,
-          question_type: 'Câu trả lời mở',
-        });
+        const res =
+          await exerciseService.generateOpen({
+            ...common,
+            question_type: 'Câu trả lời mở',
+          });
 
-        if (!res.success || !res.data) {
-          throw new Error(res.message);
+        if (
+          !res.success ||
+          !res.data?.questions?.length
+        ) {
+          throw new Error(
+            res.message ||
+            'Không nhận được câu hỏi.'
+          );
         }
 
         setOpen(res.data);
         setQuiz(null);
       } else {
-        const res = await exerciseService.generateQuiz({
-          ...common,
-          question_type: questionType as QuizType,
-        });
+        // Trắc nghiệm.
+        const res =
+          await exerciseService.generateQuiz({
+            ...common,
+            question_type:
+              questionType as QuizType,
+          });
 
-        if (!res.success || !res.data) {
-          throw new Error(res.message);
+        if (
+          !res.success ||
+          !res.data?.questions?.length
+        ) {
+          throw new Error(
+            res.message ||
+            'Không nhận được câu hỏi.'
+          );
         }
 
         setQuiz(res.data);
         setOpen(null);
       }
 
-      // Xóa đáp án và kết quả của bài trước
+      // Reset bài tập trước.
+      setCurrentIndex(0);
+      setCompletedCount(0);
       setSelected({});
       setWritten({});
+      setFinishedSpeechQuestionId(null);
+
       setQuizResult(null);
       setOpenResults({});
 
@@ -177,24 +434,26 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
     }
   };
 
-  /**
-   * 5. CHỌN ĐÁP ÁN
-   * - Một đáp án: thay lựa chọn cũ.
-   * - Nhiều đáp án: thêm hoặc bỏ lựa chọn.
-   */
+  // ===================================================
+  // 7. CHỌN ĐÁP ÁN
+  // ===================================================
+
   const selectAnswer = (
     questionId: string,
     optionId: string
   ) => {
-    setSelected((prev) => {
-      const values = prev[questionId] ?? [];
+    if (reviewing || busy) {
+      return;
+    }
 
-      const next =
-        questionType === 'Trắc nghiệm một đáp án'
-          ? [optionId]
-          : values.includes(optionId)
-            ? values.filter((id) => id !== optionId)
-            : [...values, optionId];
+    setSelected((prev) => {
+      const old = prev[questionId] ?? [];
+
+      const next = isMulti
+        ? old.includes(optionId)
+          ? old.filter((id) => id !== optionId)
+          : [...old, optionId]
+        : [optionId];
 
       return {
         ...prev,
@@ -203,68 +462,149 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
     });
   };
 
-  /**
-   * 6. NỘP BÀI
-   * - Module 1: gradeQuiz() chạy trên FE.
-   * - Module 2: gọi BE chấm lần lượt từng câu.
-   */
-  const submit = async () => {
-    setError('');
+  // ===================================================
+  // 8. CHUYỂN CÂU HỎI
+  // ===================================================
 
-    if (quiz) {
-      setQuizResult(gradeQuiz(quiz.questions, selected));
-      setStage('result');
+  const goToQuestion = (index: number) => {
+    if (
+      busy ||
+      index < 0 ||
+      index >= total ||
+      index > completedCount
+    ) {
       return;
     }
 
-    if (!open) return;
+    abortVoice();
+    stopReading();
 
-    const missing = open.questions.find(
-      (q) => !(written[q.question_id] ?? '').trim()
-    );
+    setError('');
+    setCurrentIndex(index);
+  };
 
-    if (missing) {
-      setError('Con hãy trả lời đầy đủ các câu trước khi nộp nhé.');
+  // ===================================================
+  // 9. NỘP MỘT CÂU HỎI
+  // ===================================================
+
+  const submitCurrent = async () => {
+    if (
+      !current ||
+      busy ||
+      reviewing ||
+      voice.listening ||
+      voice.stopping
+    ) {
+      return;
+    }
+
+    setError('');
+
+    // -----------------------------------------------
+    // 9.1. TRẮC NGHIỆM
+    // -----------------------------------------------
+
+    if (quiz) {
+      const answer =
+        selected[current.question_id] ?? [];
+
+      if (!answer.length) {
+        setError(
+          'Con hãy chọn ít nhất một đáp án nhé!'
+        );
+
+        return;
+      }
+
+      const done = completedCount + 1;
+
+      setCompletedCount(done);
+
+      if (done === total) {
+        const result = gradeQuiz(
+          quiz.questions,
+          selected
+        );
+
+        setQuizResult(result);
+        setStage('result');
+      } else {
+        setCurrentIndex(done);
+      }
+
+      return;
+    }
+
+    // -----------------------------------------------
+    // 9.2. CÂU TRẢ LỜI MỞ
+    // -----------------------------------------------
+
+    if (!open) {
+      return;
+    }
+
+    const q = open.questions[currentIndex];
+
+    const answer = (
+      written[q.question_id] ?? ''
+    ).trim();
+
+    if (!answer) {
+      setError(
+        'Con hãy viết hoặc nói câu trả lời nhé!'
+      );
+
       return;
     }
 
     setBusy(true);
 
+    setStatus(
+      `AI đang chấm câu ${
+        currentIndex + 1
+      }/${total}...`
+    );
+
     try {
-      const results: Record<string, OpenEvaluateData> = {};
-
-      for (let i = 0; i < open.questions.length; i++) {
-        const q = open.questions[i];
-
-        setStatus(
-          `AI đang chấm câu ${i + 1}/${open.questions.length}...`
-        );
-
-        const res = await exerciseService.evaluateOpen({
+      const res =
+        await exerciseService.evaluateOpen({
           child_id: child.child_id,
           question_id: q.question_id,
           question: q.content,
-          answer: written[q.question_id].trim(),
-          evaluation_criteria: q.evaluation_criteria,
+          answer,
+          evaluation_criteria:
+            q.evaluation_criteria,
           subject,
           topic,
           level,
         });
 
-        if (!res.success || !res.data) {
-          throw new Error(res.message);
-        }
-
-        results[q.question_id] = res.data;
+      if (!res.success || !res.data) {
+        throw new Error(
+          res.message ||
+          'Không thể chấm câu trả lời.'
+        );
       }
 
-      setOpenResults(results);
-      setStage('result');
+      setOpenResults((prev) => ({
+        ...prev,
+        [q.question_id]: res.data!,
+      }));
+
+      const done = completedCount + 1;
+
+      setCompletedCount(done);
+
+      if (done === total) {
+        setStage('result');
+      } else {
+        setCurrentIndex(done);
+      }
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Không thể chấm bài.'
+          : 'Không thể chấm bài. Hãy thử lại nhé!'
       );
     } finally {
       setBusy(false);
@@ -272,411 +612,233 @@ export function ExercisePage({ child, onGoHome }: Props) {  // 1. STATE CẤU H�
     }
   };
 
-  // Điểm trung bình các câu trả lời mở
-  const openScore = open
-    ? Math.round(
-        (
-          open.questions.reduce(
-            (sum, q) =>
-              sum + (openResults[q.question_id]?.score ?? 0),
-            0
-          ) / open.questions.length
-        ) * 10
-      ) / 10
-    : 0;
+  // ===================================================
+  // 10. TÍNH ĐIỂM VÀ LỜI KHEN
+  // ===================================================
+
+  const openScore = useMemo(() => {
+    if (!open?.questions.length) {
+      return 0;
+    }
+
+    const sum = open.questions.reduce(
+      (acc, q) =>
+        acc +
+        (openResults[q.question_id]?.score ?? 0),
+      0
+    );
+
+    return Math.round(
+      (sum / open.questions.length) * 10
+    ) / 10;
+  }, [open, openResults]);
+
+  const finalScore = quiz
+    ? (quizResult?.score ?? 0)
+    : openScore;
+
+  const praise = getPraise(finalScore);
+
+  const praiseSpeech =
+    `Chúc mừng ${child.name}! ` +
+    `Con được ${finalScore} trên 10 điểm. ` +
+    `${praise.title} ${praise.detail}`;
+
+  // Đọc nhận xét khi hoàn thành.
+  useEffect(() => {
+    if (stage !== 'result') {
+      return;
+    }
+
+    speak(praiseSpeech);
+
+    return () => stopReading();
+  }, [stage, praiseSpeech]);
+
+  useEffect(() => {
+    return () => stopReading();
+  }, []);
+
+  // ===================================================
+  // 11. ĐIỀU HƯỚNG
+  // ===================================================
+
+  const goToConfig = () => {
+    abortVoice();
+    stopReading();
+
+    setError('');
+    setStage('config');
+  };
+
+  const goHome = () => {
+    abortVoice();
+    stopReading();
+
+    onGoHome();
+  };
+
+  // ===================================================
+  // 12. ĐIỀU PHỐI 3 MÀN HÌNH
+  // ===================================================
 
   return (
     <main
+      className="exercise-page"
       style={{
         maxWidth: 850,
         margin: '24px auto',
         padding: '0 16px 40px',
       }}
     >
-      <h1 style={{ marginBottom: 16 }}>
+      <h1 style={{ marginBottom: 20 }}>
         Học cùng {child.name} 🌟
       </h1>
+
+      {/* THÔNG BÁO LỖI */}
 
       {error && (
         <div
           role="alert"
           style={{
-            ...panel,
-            color: '#C92A2A',
-            background: '#FFF5F5',
+            padding: 24,
+            background: '#fff5f5',
+            borderRadius: 20,
+            color: '#c92a2a',
+            marginBottom: 20,
           }}
         >
           {error}
         </div>
       )}
 
-        {/* MÀN HÌNH CẤU HÌNH */}
-        {stage === 'config' && (
-        <section style={panel}>
+      {/* =========================================
+          MÀN HÌNH CẤU HÌNH
+      ========================================= */}
 
-            {/* NÚT QUAY VỀ MÀN HÌNH CHÍNH */}
-            <button
-            type="button"
-            className="btn btn-outline"
-            onClick={onGoHome}
-            disabled={busy}
-            style={{
-                marginBottom: 20,
-                padding: '9px 14px',
-            }}
-            >
-            <House size={18} aria-hidden="true" />
-            Về màn hình chính
-            </button>
+      {stage === 'config' && (
+        <ExerciseSetup
+          subject={subject}
+          topicChoice={topicChoice}
+          customTopic={customTopic}
+          level={level}
+          questionType={questionType}
+          questionCount={questionCount}
+          busy={busy}
+          status={status}
+          onGoHome={goHome}
 
-            {/* TIÊU ĐỀ CẤU HÌNH */}
-            <h2 style={{ marginBottom: 16 }}>
-            Cấu hình bài tập
-            </h2>
+          onSubjectChange={(next) => {
+            setSubject(next);
 
-          <div style={{ display: 'grid', gap: 16 }}>
-            <div>
-              <label style={label}>Môn học</label>
+            // Đổi môn -> chọn chủ đề đầu tiên.
+            setTopicChoice(
+              SUBJECT_TOPICS[next][0]
+            );
 
-              <select
-                style={field}
-                value={subject}
-                onChange={(e) => {
-                  const next = e.target.value as Subject;
-                  setSubject(next);
-                  setTopicChoice(SUBJECT_TOPICS[next][0]);
-                }}
-              >
-                {(Object.keys(SUBJECT_TOPICS) as Subject[]).map(
-                  (s) => <option key={s}>{s}</option>
-                )}
-              </select>
-            </div>
+            setCustomTopic('');
+            setError('');
+          }}
 
-            <div>
-              <label style={label}>Chủ đề</label>
+          onTopicChange={(next) => {
+            setTopicChoice(next);
+            setError('');
+          }}
 
-              <select
-                style={field}
-                value={topicChoice}
-                onChange={(e) => setTopicChoice(e.target.value)}
-              >
-                {SUBJECT_TOPICS[subject].map(
-                  (t) => <option key={t}>{t}</option>
-                )}
+          onCustomTopicChange={
+            setCustomTopic
+          }
 
-                <option>Ngẫu nhiên</option>
-                <option>Chủ đề khác</option>
-              </select>
-            </div>
+          onLevelChange={setLevel}
 
-            {topicChoice === 'Chủ đề khác' && (
-              <div>
-                <label style={label}>Nhập chủ đề</label>
+          onQuestionTypeChange={
+            setQuestionType
+          }
 
-                <input
-                  style={field}
-                  maxLength={100}
-                  value={customTopic}
-                  placeholder="Ví dụ: Các hành tinh"
-                  onChange={(e) => setCustomTopic(e.target.value)}
-                />
-              </div>
-            )}
+          onQuestionCountChange={
+            setQuestionCount
+          }
 
-            <div>
-              <label style={label}>Mức độ</label>
-
-              <select
-                style={field}
-                value={level}
-                onChange={(e) =>
-                  setLevel(e.target.value as Level)
-                }
-              >
-                <option>Cơ bản</option>
-                <option>Nâng cao</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={label}>Dạng bài</label>
-
-              <select
-                style={field}
-                value={questionType}
-                onChange={(e) =>
-                  setQuestionType(e.target.value as QuestionType)
-                }
-              >
-                <option>Trắc nghiệm một đáp án</option>
-                <option>Trắc nghiệm nhiều đáp án</option>
-                <option>Câu trả lời mở</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={label}>Số câu (1–5)</label>
-
-              <input
-                style={field}
-                type="number"
-                min={1}
-                max={5}
-                value={questionCount}
-                onChange={(e) =>
-                  setQuestionCount(Number(e.target.value))
-                }
-              />
-            </div>
-
-            <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={generate}
-            >
-              {busy ? status : 'Tạo bài tập'}
-            </button>
-          </div>
-        </section>
+          onStart={generate}
+        />
       )}
 
-      {/* MÀN HÌNH LÀM BÀI */}
-      {stage === 'doing' && (
-        <>
-          <h2 style={{ marginBottom: 16 }}>
-            {quiz?.question_type ?? open?.question_type}
-          </h2>
+      {/* =========================================
+          MÀN HÌNH LÀM BÀI
+      ========================================= */}
 
-          {quiz?.questions.map((q, index) => (
-            <section key={q.question_id} style={panel}>
-              <h3>
-                Câu {index + 1}: {q.content}
-              </h3>
+      {stage === 'doing' && current && (
+        <ExerciseDoing
+          current={current}
+          currentIndex={currentIndex}
+          total={total}
+          completedCount={completedCount}
+          reviewing={reviewing}
+          isMulti={isMulti}
+          quiz={quiz}
+          open={open}
+          selected={selected}
+          written={written}
+          voice={voice}
+          busy={busy}
+          status={status}
+          autoRead={autoRead}
 
-              {quiz.question_type ===
-                'Trắc nghiệm nhiều đáp án' && (
-                <p>Chọn tất cả đáp án đúng.</p>
-              )}
+          finishedSpeechQuestionId={
+            finishedSpeechQuestionId
+          }
 
-              {q.options.map((opt) => (
-                <label
-                  key={opt.option_id}
-                  style={{
-                    display: 'flex',
-                    gap: 10,
-                    padding: 10,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type={
-                      quiz.question_type === 'Trắc nghiệm một đáp án'
-                        ? 'radio'
-                        : 'checkbox'
-                    }
-                    name={q.question_id}
-                    checked={
-                      (selected[q.question_id] ?? []).includes(
-                        opt.option_id
-                      )
-                    }
-                    onChange={() =>
-                      selectAnswer(q.question_id, opt.option_id)
-                    }
-                  />
+          onToggleAutoRead={() =>
+            setAutoRead((prev) => !prev)
+          }
 
-                  {opt.option_id}. {opt.text}
-                </label>
-              ))}
-            </section>
-          ))}
+          onReadAgain={() =>
+            speak(readingText)
+          }
 
-          {open?.questions.map((q, index) => (
-            <section key={q.question_id} style={panel}>
-              <h3>
-                Câu {index + 1}: {q.content}
-              </h3>
+          onStopReading={stopReading}
 
-              <p style={{ color: 'var(--color-text-muted)' }}>
-                {q.answer_hint}
-              </p>
+          onSelectAnswer={selectAnswer}
 
-              <textarea
-                style={{ ...field, marginTop: 12 }}
-                rows={3}
-                maxLength={1000}
-                placeholder="Con hãy viết câu trả lời ở đây..."
-                value={written[q.question_id] ?? ''}
-                onChange={(e) =>
-                  setWritten((old) => ({
-                    ...old,
-                    [q.question_id]: e.target.value,
-                  }))
-                }
-              />
-            </section>
-          ))}
+          onWrittenChange={(id, value) =>
+            setWritten((prev) => ({
+              ...prev,
+              [id]: value,
+            }))
+          }
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 12,
-            }}
-          >
-            <button
-              className="btn btn-outline"
-              disabled={busy}
-              onClick={() => setStage('config')}
-            >
-              Quay lại
-            </button>
+          onFinishedSpeechChange={
+            setFinishedSpeechQuestionId
+          }
 
-            <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={submit}
-            >
-              {busy ? status : 'Nộp bài'}
-            </button>
-          </div>
-        </>
+          onGoToQuestion={goToQuestion}
+          onSubmitCurrent={submitCurrent}
+        />
       )}
 
-      {/* MÀN HÌNH KẾT QUẢ */}
+      {/* =========================================
+          MÀN HÌNH KẾT QUẢ
+      ========================================= */}
+
       {stage === 'result' && (
-        <>
-          <section style={panel}>
-            <h2>Kết quả của {child.name} 🎉</h2>
+        <ExerciseResult
+          childName={child.name}
+          finalScore={finalScore}
+          total={total}
+          praise={praise}
+          quiz={quiz}
+          open={open}
+          quizResult={quizResult}
+          openResults={openResults}
+          written={written}
 
-            <p
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                marginTop: 8,
-              }}
-            >
-              {quiz ? quizResult?.score : openScore} / 10 điểm
-            </p>
+          onReadPraise={() =>
+            speak(praiseSpeech)
+          }
 
-            {quiz && (
-              <p>
-                Đúng {quizResult?.correct_count}/
-                {quizResult?.total_questions} câu
-              </p>
-            )}
-
-            {open && (
-              <p>
-                Điểm trung bình các câu trả lời mở
-                (AI đánh giá tham khảo).
-              </p>
-            )}
-          </section>
-
-          {quiz?.questions.map((q, i) => {
-            const result = quizResult?.results[q.question_id];
-
-            return (
-              <section key={q.question_id} style={panel}>
-                <h3>
-                  Câu {i + 1}: {q.content}
-                </h3>
-
-                <p
-                  style={{
-                    color: result?.is_correct
-                      ? '#2B8A3E'
-                      : '#C92A2A',
-                  }}
-                >
-                  {result?.is_correct ? '✓ Đúng' : '✗ Chưa đúng'}
-                </p>
-
-                <p>
-                  Con chọn:
-                  {' '}{result?.selected_option_ids.join(', ') || 'Chưa chọn'}
-                </p>
-
-                <p>
-                  Đáp án đúng: {q.correct_option_ids.join(', ')}
-                </p>
-
-                <p>Giải thích: {q.explanation}</p>
-              </section>
-            );
-          })}
-
-          {open?.questions.map((q, i) => {
-            const result = openResults[q.question_id];
-
-            return (
-              <section key={q.question_id} style={panel}>
-                <h3>
-                  Câu {i + 1}: {q.content}
-                </h3>
-
-                <p>Con trả lời: {written[q.question_id]}</p>
-
-                <p>
-                  <strong>Điểm: {result?.score}/10</strong>
-                </p>
-
-                <p>{result?.feedback}</p>
-
-                {result?.strengths?.length > 0 && (
-                  <p>
-                    Điểm mạnh: {result.strengths.join('; ')}
-                  </p>
-                )}
-
-                {result?.suggestions?.length > 0 && (
-                  <p>
-                    Gợi ý: {result.suggestions.join('; ')}
-                  </p>
-                )}
-
-                {result?.sample_answer && (
-                  <p>
-                    Trả lời tham khảo: {result.sample_answer}
-                  </p>
-                )}
-              </section>
-            );
-          })}
-
-            {/* NHÓM NÚT ĐIỀU HƯỚNG SAU KHI LÀM BÀI */}
-            <div
-            style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 12,
-            }}
-            >
-            {/* NÚT LÀM BÀI MỚI */}
-            <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                setError('');
-                setStage('config');
-                }}
-            >
-                Làm bài mới
-            </button>
-
-            {/* NÚT VỀ MÀN HÌNH CHÍNH */}
-            <button
-                type="button"
-                className="btn btn-outline"
-                onClick={onGoHome}
-            >
-                <House size={18} aria-hidden="true" />
-                Về màn hình chính
-            </button>
-            </div>
-        </>
+          onNewExercise={goToConfig}
+          onGoHome={goHome}
+        />
       )}
     </main>
   );

@@ -222,7 +222,7 @@ async def generate_quiz_endpoint(
     try:
         result = await (
             db.table("child_profiles")
-            .select("id, age")
+            .select("id, age, gender, interests")
             .eq("id", request.child_id)
             .limit(1)
             .execute()
@@ -253,8 +253,15 @@ async def generate_quiz_endpoint(
             "CHILD_NOT_FOUND"
         )
 
-    # Lấy tuổi từ hồ sơ tìm được.
-    age = result.data[0].get("age")
+    # ========================================================
+    # BƯỚC 2.1: LẤY THÔNG TIN HỒ SƠ TRẺ
+    # ========================================================
+
+    # Lấy hồ sơ trẻ từ kết quả truy vấn Supabase.
+    profile = result.data[0]
+
+    # Lấy tuổi từ hồ sơ.
+    age = profile.get("age")
 
     # Kiểm tra dữ liệu tuổi.
     if (
@@ -268,15 +275,56 @@ async def generate_quiz_endpoint(
             "INVALID_CHILD_AGE"
         )
 
+    # ========================================================
+    # BƯỚC 2.2: LẤY GIỚI TÍNH CỦA TRẺ
+    # ========================================================
+
+    # Lấy gender từ Database.
+    # Ví dụ: "Nam", "Nữ" hoặc None.
+    raw_gender = profile.get("gender")
+
+    # Loại bỏ khoảng trắng thừa.
+    # Nếu gender không phải chuỗi hoặc rỗng,
+    # sử dụng None.
+    gender = (
+        (raw_gender.strip() or None)
+        if isinstance(raw_gender, str)
+        else None
+    )
+
+    # ========================================================
+    # BƯỚC 2.3: LẤY DANH SÁCH SỞ THÍCH CỦA TRẺ
+    # ========================================================
+
+    # Lấy interests từ Database.
+    # Ví dụ: ["Động vật", "Vẽ tranh"].
+    raw_interests = profile.get("interests")
+
+    # Kiểm tra interests có phải danh sách không.
+    if isinstance(raw_interests, list):
+
+        # Loại bỏ phần tử không phải chuỗi,
+        # chuỗi rỗng và khoảng trắng thừa.
+        interests = [
+            item.strip()
+            for item in raw_interests
+            if isinstance(item, str) and item.strip()
+        ]
+
+    else:
+        # Không có sở thích thì dùng danh sách rỗng.
+        interests = []
+
     # --------------------------------------------------------
     # BƯỚC 3: GỌI EGM SINH CÂU HỎI
     # --------------------------------------------------------
-
     try:
 
         quiz_data = await generate_quiz(
             request=request,
             age=age,
+            gender=gender,
+            interests=interests,
 
             # Hàm gửi HTTP request đến LLM Server.
             llm_generate=call_llm_for_quiz,
@@ -287,7 +335,6 @@ async def generate_quiz_endpoint(
             # Thử lại tối đa 2 lần nếu output sai schema.
             max_attempts=2
         )
-
     # --------------------------------------------------------
     # BƯỚC 4: XỬ LÝ LỖI LLM
     # --------------------------------------------------------

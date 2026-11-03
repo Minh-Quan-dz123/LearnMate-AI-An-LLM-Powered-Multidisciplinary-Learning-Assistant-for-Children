@@ -1,0 +1,571 @@
+
+/*
+ * LEARNMATE AI — DETECTIVE GAME V3
+ *
+ * CSS độc lập, không ảnh hưởng Module 1–2 hoặc V2.
+ */
+
+.lm3-v3-game {
+  width: 100%;
+  color: #243047;
+}
+
+/* ===========================
+   TITLE
+=========================== */
+
+.lm3-v3-titlebar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 20px 0 22px;
+}
+
+.lm3-v3-eyebrow {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1976a3;
+  letter-spacing: .08em;
+}
+
+.lm3-v3-titlebar h1 {
+  font-size: clamp(24px, 3vw, 34px);
+  margin: 7px 0 8px;
+  line-height: 1.2;
+}
+
+.lm3-v3-titlebar p {
+  max-width: 760px;
+  line-height: 1.6;
+  margin: 0;
+  font-size: 16px;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+.lm3-v3-listen,
+.lm3-v3-scene-head button,
+.lm3-v3-audio-actions button {
+  border: 1px solid #d2dce9;
+  background: #fff;
+  color: #2a5474;
+  border-radius: 12px;
+  padding: 10px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+/* ===========================
+   TWO-COLUMN LAYOUT
+=========================== */
+
+.lm3-v3-columns {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.35fr)
+    minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.lm3-v3-scene-panel,
+.lm3-v3-panel {
+  background: #fff;
+  border: 1px solid #e0e8ef;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 8px 25px #1d476b0b;
+}
+
+/* ===========================
+   SCENE
+=========================== */
+
+.lm3-v3-scene-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.lm3-v3-scene-head strong {
+  font-size: 17px;
+}
+
+.lm3-v3-picture-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #e9f1f6;
+}
+
+.lm3-v3-photo-wrap {
+  width: 100%;
+  position: relative;
+  flex: none;
+  background: #d8e6e8;
+}
+
+.lm3-v3-photo-wrap img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* ===========================
+   HINT OVERLAY
+=========================== */
+
+.lm3-v3-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lm3-v3-highlight {
+  position: absolute;
+  border: 4px solid #ffdf3b;
+  box-shadow:
+    0 0 0 2px #1b4068,
+    0 0 23px 6px #fff9a2b8;
+  background: transparent;
+  animation:
+    lm3-v3-glow
+    1.5s
+    ease-in-out
+    infinite alternate;
+}
+
+.lm3-v3-pointer {
+  position: absolute;
+  color: #ffbf2c;
+  filter: drop-shadow(
+    0 2px 2px #122944
+  );
+  transform:
+    translate(0, -80%)
+    rotate(-22deg);
+  animation:
+    lm3-v3-point
+    1.4s
+    ease-in-out
+    infinite alternate;
+}
+
+.lm3-v3-scene-note {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 12px 2px 0;
+}
+
+/* ===========================
+   RIGHT PANELS
+=========================== */
+
+.lm3-v3-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.lm3-v3-panel-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #1c6385;
+}
+
+.lm3-v3-panel-title h2 {
+  font-size: 21px;
+  margin: 0;
+  color: #1e3a56;
+}
+
+.lm3-v3-count {
+  font-size: 14px;
+  color: #56687f;
+  margin: 12px 0;
+}
+
+/* ===========================
+   MAIN ACTIONS
+=========================== */
+
+.lm3-v3-primary,
+.lm3-v3-submit {
+  border: 0;
+  color: #fff;
+  background:
+    linear-gradient(
+      125deg,
+      #147dab,
+      #176399
+    );
+  font-size: 16px;
+  font-weight: 850;
+  padding: 15px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  cursor: pointer;
+  min-height: 52px;
+}
+
+.lm3-v3-submit {
+  background:
+    linear-gradient(
+      125deg,
+      #14a37f,
+      #14845d
+    );
+  margin-top: 16px;
+}
+
+.lm3-v3-game button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* ===========================
+   REVEALED HINTS
+=========================== */
+
+.lm3-v3-hint-history {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.lm3-v3-hint-history button {
+  border: 1px solid #cbd8e2;
+  background: #f5f9fc;
+  color: #34506b;
+  border-radius: 40px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.lm3-v3-hint-history button.active {
+  background: #e5f5ff;
+  border-color: #36a4cb;
+  color: #075c87;
+}
+
+/* ===========================
+   HINT TEXT AREA
+=========================== */
+
+.lm3-v3-hint-box {
+  margin-top: 13px;
+  background: #f0faff;
+  border: 1px solid #c3e7f6;
+  border-radius: 15px;
+  padding: 15px;
+  min-height: 126px;
+}
+
+.lm3-v3-hint-box strong {
+  font-size: 15px;
+  color: #1d658a;
+}
+
+.lm3-v3-hint-box p {
+  margin: 9px 0 12px;
+  line-height: 1.65;
+  font-size: 16px;
+}
+
+.lm3-v3-audio-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+/* ===========================
+   ANSWER MODE SWITCH
+=========================== */
+
+.lm3-v3-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  background: #edf2f6;
+  padding: 5px;
+  border-radius: 14px;
+  margin: 13px 0;
+}
+
+.lm3-v3-switch button {
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  padding: 11px 6px;
+  cursor: pointer;
+  color: #52647b;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.lm3-v3-switch button.active {
+  background: #fff;
+  color: #136c98;
+  box-shadow: 0 2px 9px #18466b19;
+}
+
+/* ===========================
+   MULTIPLE CHOICE
+=========================== */
+
+.lm3-v3-choices {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.lm3-v3-choices legend {
+  font-weight: 750;
+  margin-bottom: 10px;
+}
+
+.lm3-v3-choices label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border: 2px solid #e0e8ef;
+  border-radius: 12px;
+  margin: 7px 0;
+  cursor: pointer;
+  line-height: 1.45;
+}
+
+.lm3-v3-choices label.selected {
+  border-color: #25a4b9;
+  background: #ecfaff;
+}
+
+.lm3-v3-choices input {
+  width: 19px;
+  height: 19px;
+  accent-color: #1587ad;
+  flex: none;
+}
+
+/* ===========================
+   OPEN ANSWER
+=========================== */
+
+.lm3-v3-open label {
+  font-weight: 750;
+  display: block;
+  margin: 10px 0;
+}
+
+.lm3-v3-open textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 115px;
+  border: 2px solid #d6e4ed;
+  border-radius: 13px;
+  resize: vertical;
+  padding: 13px;
+  font: inherit;
+  line-height: 1.55;
+}
+
+.lm3-v3-open textarea:focus {
+  outline: 2px solid #7cc6de;
+}
+
+.lm3-v3-open small {
+  display: block;
+  text-align: right;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+/* ===========================
+   FEEDBACK / ERROR
+=========================== */
+
+.lm3-v3-error,
+.lm3-v3-feedback {
+  display: flex;
+  gap: 8px;
+  background: #fff3eb;
+  color: #9a481c;
+  border: 1px solid #ffd8bf;
+  border-radius: 12px;
+  padding: 12px;
+  line-height: 1.5;
+}
+
+.lm3-v3-feedback {
+  background: #eff9fa;
+  border-color: #c9ebea;
+  color: #236b68;
+}
+
+/* ===========================
+   IMAGE FULLSCREEN
+=========================== */
+
+.lm3-v3-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #091a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 18px 20px;
+  overflow: auto;
+}
+
+.lm3-v3-fullscreen .lm3-v3-photo-wrap {
+  width: min(
+    95vw,
+    calc(87vh * var(--v3-ratio, 1.777))
+  );
+  max-width: 100%;
+}
+
+.lm3-v3-close-full {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  color: #fff;
+  background: #2e5367;
+  border: 1px solid #547589;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.lm3-v3-image-error {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 220px;
+  color: #b45309;
+}
+
+.lm3-v3-image-error button {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* ===========================
+   ANIMATIONS
+=========================== */
+
+.lm3-v3-spin {
+  animation:
+    lm3-v3-rotate
+    1s
+    linear
+    infinite;
+}
+
+@keyframes lm3-v3-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lm3-v3-glow {
+  to {
+    box-shadow:
+      0 0 0 2px #1b4068,
+      0 0 14px 3px #ffd42c80;
+  }
+}
+
+@keyframes lm3-v3-point {
+  to {
+    transform:
+      translate(2px, -70%)
+      rotate(-16deg);
+  }
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media (max-width: 900px) {
+  .lm3-v3-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .lm3-v3-titlebar {
+    flex-direction: column;
+  }
+
+  .lm3-v3-scene-panel,
+  .lm3-v3-panel {
+    padding: 14px;
+  }
+
+  .lm3-v3-fullscreen .lm3-v3-photo-wrap {
+    width: 100%;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY
+=========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .lm3-v3-highlight,
+  .lm3-v3-pointer,
+  .lm3-v3-spin {
+    animation: none;
+  }
+}
+
+
+/* Điều khiển Gemini TTS nằm cạnh
+   phần giới thiệu vụ án V3. */
+
+.lm3-v3-titlebar > .lm3-audio {
+  flex: 0 1 330px;
+  min-width: 240px;
+}
+
+@media (max-width: 900px) {
+  .lm3-v3-titlebar > .lm3-audio {
+    flex: auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
