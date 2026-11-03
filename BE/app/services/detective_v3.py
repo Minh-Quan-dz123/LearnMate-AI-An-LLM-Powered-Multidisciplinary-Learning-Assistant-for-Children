@@ -751,9 +751,19 @@ async def localize_hints(
             "Gemini Vision phản hồi quá chậm"
         ) from exc
 
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 504:
+            raise LLMTimeoutError(
+                "Gemini Vision xử lý quá thời gian cho phép"
+            ) from exc
+
+        raise LLMUnavailableError(
+            f"Gemini Vision trả HTTP {exc.response.status_code}"
+        ) from exc
+
     except httpx.HTTPError as exc:
         raise LLMUnavailableError(
-            "Không truy cập được Gemini Vision"
+            "Không kết nối được Gemini Vision"
         ) from exc
 
     except ValueError as exc:

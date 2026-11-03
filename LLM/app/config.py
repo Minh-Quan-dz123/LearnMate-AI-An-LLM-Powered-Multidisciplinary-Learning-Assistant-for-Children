@@ -129,11 +129,11 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # 4. GIỚI HẠN GỌI MODEL
     # --------------------------------------------------------
-    request_timeout_seconds: float = 60.0
+    request_timeout_seconds: float = 120.0
 
     
     # Timeout riêng cho Cloudflare sinh ảnh.
-    image_timeout_seconds: float = 120.0
+    image_timeout_seconds: float = 150.0
 
     # Số bước khuếch tán của FLUX.1 Schnell.
     image_generation_steps: int = 4

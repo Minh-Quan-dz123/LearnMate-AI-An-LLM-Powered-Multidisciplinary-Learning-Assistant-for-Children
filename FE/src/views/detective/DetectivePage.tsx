@@ -18,7 +18,7 @@
  * Không lưu lời giải trong localStorage.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CSSProperties } from 'react';
 
@@ -62,9 +62,12 @@ import { detectiveService } from '../../services/detectiveService';
 import { DetectiveGame } from './DetectiveGame';
 import { DetectiveGameV3 } from './DetectiveGameV3';
 
-
 import {
   DetectiveAudioPlayer,
+} from './DetectiveAudioPlayer';
+
+import type {
+  DetectiveNarrationVoice,
 } from './DetectiveAudioPlayer';
 
 import {
@@ -75,7 +78,6 @@ import {
   unlockCelebrationAudio,
   playCelebrationSound,
 } from './detectiveCelebrationAudio';
-
 
 import './Detective.css';
 
@@ -194,6 +196,16 @@ export function DetectivePage({
 
   const [result, setResult] =
     useState<DetectiveSolveData | null>(null);
+
+  // Giọng kể dùng CHUNG cho giới thiệu, nhận xét và lời giải
+  // của MỘT ván.
+  // Ván mới / replay sẽ mặc định Gemini lại.
+  const [narrationVoice, setNarrationVoice] =
+    useState<DetectiveNarrationVoice>('gemini');
+
+  const switchToBrowser = useCallback(() => {
+    setNarrationVoice('browser');
+  }, []);
 
   // ----------------------------------------------------------
   // 3.4. STATE — VỤ ÁN ĐANG DỞ
@@ -489,6 +501,9 @@ export function DetectivePage({
         return;
       }
 
+      // Mỗi vụ mới đều quay về giọng Gemini mặc định.
+      setNarrationVoice('gemini');
+
       // Lưu dữ liệu V2 hoặc V3.
       setActiveCase(response.data);
 
@@ -588,6 +603,12 @@ export function DetectivePage({
         return;
       }
 
+      // Nếu tiếp tục một case khác với case đang nằm trong state FE,
+      // đó là một ván mới với giọng Gemini mặc định.
+      if (activeCase?.case_id !== response.data.case_id) {
+        setNarrationVoice('gemini');
+      }
+
       setActiveCase(response.data);
       setResult(null);
 
@@ -646,6 +667,7 @@ export function DetectivePage({
         return;
       }
 
+      setNarrationVoice('gemini'); // Chơi lại tính là ván mới.
       setActiveCase(response.data);
       setResult(null);
 
@@ -1106,6 +1128,8 @@ export function DetectivePage({
               onCaseChange={setActiveCase}
               onSolved={handleSolved}
               onBusyChange={setGameBusy}
+              narrationVoice={narrationVoice}
+              onSwitchToBrowser={switchToBrowser}
             />
 
           ) : (
@@ -1326,7 +1350,6 @@ export function DetectivePage({
             13.6. RESULT
         ================================================== */}
 
-        
         {screen === 'result' &&
           result &&
           activeCase && (
@@ -1345,7 +1368,6 @@ export function DetectivePage({
               result.outcome === 'solved' && (
                 <DetectiveCelebration />
               )}
-
 
             {/* BIỂU TƯỢNG KẾT QUẢ */}
 
@@ -1408,8 +1430,6 @@ export function DetectivePage({
 
             </div>
 
-            {/* BA NÚT ĐIỀU HƯỚNG */}
-            
             {/* =========================================
                 GEMINI TTS — KẾT LUẬN V3
 
@@ -1435,6 +1455,8 @@ export function DetectivePage({
                 label="Nghe cô Gemini giải thích"
                 showCaption={false}
                 autoPlayOnStart
+                voiceMode={narrationVoice}
+                onSwitchToBrowser={switchToBrowser}
               />
             )}
 
@@ -1460,6 +1482,7 @@ export function DetectivePage({
 
             )}
 
+            {/* BA NÚT ĐIỀU HƯỚNG */}
 
             <div className="lm-detective-result-actions">
 

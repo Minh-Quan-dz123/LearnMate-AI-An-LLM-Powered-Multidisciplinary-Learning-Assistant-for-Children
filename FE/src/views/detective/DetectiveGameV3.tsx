@@ -53,16 +53,18 @@ import {
 
 import './DetectiveGameV3.css';
 
-
 import {
   DetectiveAudioPlayer,
+} from './DetectiveAudioPlayer';
+
+import type {
+  DetectiveNarrationVoice,
 } from './DetectiveAudioPlayer';
 
 import {
   unlockCelebrationAudio,
   playCelebrationSound,
 } from './detectiveCelebrationAudio';
-
 
 // ============================================================
 // 1. TYPES
@@ -86,6 +88,9 @@ interface Props {
   onBusyChange: (
     busy: boolean
   ) => void;
+
+  narrationVoice: DetectiveNarrationVoice;
+  onSwitchToBrowser: () => void;
 }
 
 // ============================================================
@@ -180,6 +185,8 @@ export function DetectiveGameV3({
   onCaseChange,
   onSolved,
   onBusyChange,
+  narrationVoice,
+  onSwitchToBrowser,
 }: Props) {
 
   // ----------------------------------------------------------
@@ -220,7 +227,6 @@ export function DetectiveGameV3({
   const [solveBusy, setSolveBusy] =
     useState(false);
 
-  
   // Khôi phục phản hồi khi tiếp tục vụ án dở.
   const [feedback, setFeedback] =
     useState<string>(() => {
@@ -244,7 +250,6 @@ export function DetectiveGameV3({
   // Tăng giá trị để yêu cầu dừng Gemini TTS.
   const [geminiStopSignal, setGeminiStopSignal] =
     useState(0);
-
 
   const [error, setError] =
     useState('');
@@ -390,7 +395,6 @@ export function DetectiveGameV3({
    * Không gọi API.
    * Không trừ lượt gợi ý.
    */
-  
   function chooseHint(
     hint: DetectiveHintV3
   ) {
@@ -408,7 +412,6 @@ export function DetectiveGameV3({
     // Không gọi Gemini TTS cho nội dung này.
     speak(hint.content);
   }
-
 
   // ==========================================================
   // 6. USE NEW HINT
@@ -572,7 +575,6 @@ export function DetectiveGameV3({
       return;
     }
 
-
     const signature = `${mode}:${answer}`;
 
     /**
@@ -583,16 +585,16 @@ export function DetectiveGameV3({
      * gửi câu mới có thể tiêu thêm lượt.
      */
     if (
-    solveRequest.current !== null &&
-    solveRequest.current.signature !== signature
+      solveRequest.current !== null &&
+      solveRequest.current.signature !== signature
     ) {
-    setError(
+      setError(
         'Kết luận trước chưa được xác nhận. ' +
         'Con hãy gửi lại đúng kết luận trước, ' +
         'hoặc tải lại vụ án để cập nhật tiến trình.'
-    );
+      );
 
-    return;
+      return;
     }
 
     /**
@@ -600,9 +602,8 @@ export function DetectiveGameV3({
      * submission_id của request trước.
      */
     const submissionId =
-    solveRequest.current?.id ??
-    crypto.randomUUID();
-
+      solveRequest.current?.id ??
+      crypto.randomUUID();
 
     solveRequest.current = {
       signature,
@@ -615,7 +616,6 @@ export function DetectiveGameV3({
     setError('');
     setFeedback('');
 
-    
     // Dừng Web Speech đang đọc gợi ý.
     stop();
 
@@ -629,7 +629,6 @@ export function DetectiveGameV3({
     );
 
     try {
-
 
       const response =
         mode === 'choice'
@@ -689,17 +688,16 @@ export function DetectiveGameV3({
         last_submission_result: result,
 
         ...(result.completed
-            ? {
-                explanation: result.explanation,
+          ? {
+              explanation: result.explanation,
             }
-            : {}),
-        });
+          : {}),
+      });
 
       /**
        * Nếu vụ án đã kết thúc:
        * chuyển sang trang kết quả.
        */
-      
       if (result.completed) {
         // Đúng lần 1 hoặc lần 2:
         // có tiếng chiến thắng.
@@ -720,7 +718,6 @@ export function DetectiveGameV3({
         // khi phần nhận xét xuất hiện.
         setAnnounceRetry(true);
       }
-
 
     } catch {
 
@@ -766,7 +763,6 @@ export function DetectiveGameV3({
 
         </div>
 
-        
         {/* GEMINI TTS — GIỚI THIỆU VỤ ÁN */}
 
         <DetectiveAudioPlayer
@@ -780,8 +776,9 @@ export function DetectiveGameV3({
           autoPlayOnStart
           stopSignal={geminiStopSignal}
           showCaption={false}
+          voiceMode={narrationVoice}
+          onSwitchToBrowser={onSwitchToBrowser}
         />
-
 
       </div>
 
@@ -1279,7 +1276,6 @@ export function DetectiveGameV3({
 
             {/* PHẢN HỒI SAI LẦN 1 */}
 
-            
             {/* PHẢN HỒI SAU KHI NỘP SAI LẦN 1 */}
 
             {feedback && (
@@ -1308,10 +1304,11 @@ export function DetectiveGameV3({
                   autoPlayOnStart={announceRetry}
                   stopSignal={geminiStopSignal}
                   showCaption={false}
+                  voiceMode={narrationVoice}
+                  onSwitchToBrowser={onSwitchToBrowser}
                 />
               </>
             )}
-
 
             {/* ERROR */}
 

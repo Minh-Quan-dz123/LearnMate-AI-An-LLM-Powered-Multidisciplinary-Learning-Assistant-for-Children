@@ -102,14 +102,19 @@ export const detectiveService = {
     caseId: string,
     childId: number,
     segmentType: DetectiveNarrationSegment,
-    segmentId: string | null = null
+    segmentId: string | null = null,
+    signal?: AbortSignal
   ) {
-    return postJson<DetectiveNarrationData>(
+    return apiRequest<DetectiveNarrationData>(
       `${casePath(caseId)}/narration`,
       {
-        child_id: childId,
-        segment_type: segmentType,
-        segment_id: segmentId,
+        method: 'POST',
+        body: JSON.stringify({
+          child_id: childId,
+          segment_type: segmentType,
+          segment_id: segmentId,
+        }),
+        signal,
       }
     );
   },
